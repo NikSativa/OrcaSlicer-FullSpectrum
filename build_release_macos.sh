@@ -178,6 +178,7 @@ function build_slicer() {
             if [ "1." != "$BUILD_ONLY". ]; then
                 cmake "${PROJECT_DIR}" \
                     -G "${SLICER_CMAKE_GENERATOR}" \
+                    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
                     -DBBL_RELEASE_TO_PUBLIC=1 \
                     -DORCA_TOOLS=ON \
                     ${ORCA_UPDATER_SIG_KEY:+-DORCA_UPDATER_SIG_KEY="$ORCA_UPDATER_SIG_KEY"} \
