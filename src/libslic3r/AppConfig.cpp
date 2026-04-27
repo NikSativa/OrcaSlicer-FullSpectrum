@@ -37,8 +37,8 @@ using namespace nlohmann;
 
 namespace Slic3r {
 
-static const std::string VERSION_CHECK_URL_STABLE = "https://api.github.com/repos/Snapmaker/OrcaSlicer/releases/latest";
-static const std::string VERSION_CHECK_URL = "https://api.github.com/repos/Snapmaker/OrcaSlicer/releases";
+static const std::string VERSION_CHECK_URL_STABLE = "";
+static const std::string VERSION_CHECK_URL = "";
 static const std::string PROFILE_UPDATE_URL = "/upgrade/profile/";
 static const std::string FLUTTER_UPDATE_URL = "/upgrade/flutter/";
 static const std::string MODELS_STR = "models";
