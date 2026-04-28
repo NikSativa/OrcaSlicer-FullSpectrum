@@ -884,7 +884,8 @@ void PlateData::parse_filament_info(GCodeProcessorResult *result)
             std::string obj_curr_characters;
             float object_unit_factor;
             int object_current_color_group{-1};
-            std::map<int, std::string> object_group_id_to_color;
+            // SnapOrka: matched root-level m_group_id_to_color type; preserve all colors per group.
+            std::map<int, std::vector<std::string>> object_group_id_to_color;
             bool is_bbl_3mf { false };
 
             ObjectImporter(_BBS_3MF_Importer *importer, std::string file_path, std::string obj_path)
@@ -1082,7 +1083,10 @@ void PlateData::parse_filament_info(GCodeProcessorResult *result)
         CurrentInstance m_curr_instance;
 
         int m_current_color_group{-1};
-        std::map<int, std::string> m_group_id_to_color;
+        // SnapOrka: ported from BambuStudio — preserve ALL colors per group, not just the last.
+        // FullSpectrum's previous map<int, string> overwrote on every <m:color> sibling, losing
+        // multi-color groups (common in Prusa-exported and BambuStudio non-BBS 3MF files).
+        std::map<int, std::vector<std::string>> m_group_id_to_color;
 
     public:
         _BBS_3MF_Importer();
@@ -1095,6 +1099,11 @@ void PlateData::parse_filament_info(GCodeProcessorResult *result)
         bool get_thumbnail(const std::string &filename, std::string &data);
         bool load_gcode_3mf_from_stream(std::istream & data, Model& model, PlateDataPtrs& plate_data_list, DynamicPrintConfig& config, Semver& file_version);
         unsigned int version() const { return m_version; }
+
+        // SnapOrka: expose extracted colour-group metadata so callers (Plater) can offer a
+        // colour→extruder mapping dialog for non-BBS 3MF files. Each group maps to a vector
+        // of hex colours (multi-colour <m:colorgroup> support).
+        const std::map<int, std::vector<std::string>>& get_color_group_map() const { return m_group_id_to_color; }
 
     private:
         void _destroy_xml_parser();
@@ -1724,8 +1733,12 @@ void PlateData::parse_filament_info(GCodeProcessorResult *result)
             for (auto obj_importer : m_object_importers) {
                 for (const IdToCurrentObjectMap::value_type&  obj : obj_importer->object_list)
                     m_current_objects.insert({ std::move(obj.first), std::move(obj.second)});
-                for (auto group_color : obj_importer->object_group_id_to_color)
-                    m_group_id_to_color.insert(std::move(group_color));
+                // SnapOrka: vector-aware merge — concatenate per-group colors instead of overwriting.
+                for (auto& group_color : obj_importer->object_group_id_to_color) {
+                    auto& dst = m_group_id_to_color[group_color.first];
+                    for (auto& c : group_color.second)
+                        dst.push_back(std::move(c));
+                }
 
                 delete obj_importer;
             }
@@ -1949,17 +1962,23 @@ void PlateData::parse_filament_info(GCodeProcessorResult *result)
         }
 
         BOOST_LOG_TRIVIAL(info) << __FUNCTION__ << ":" << __LINE__ << boost::format(", process group colors, size %1%\n")%m_group_id_to_color.size();
+        // SnapOrka: each group can carry multiple colors. Map each color to a unique extruder
+        // (deduplicating identical hex strings across groups). The group→extruder mapping uses
+        // the FIRST color of each group to keep behavior backward-compatible for single-color groups.
         std::map<int, int> color_group_id_to_extruder_id_map;
         std::map<std::string, int> color_to_extruder_id_map;
         int extruder_id = 0;
         for (auto group_iter = m_group_id_to_color.begin(); group_iter != m_group_id_to_color.end(); ++group_iter) {
-            auto color_iter = color_to_extruder_id_map.find(group_iter->second);
-            if (color_iter == color_to_extruder_id_map.end()) {
-                ++extruder_id;
-                color_to_extruder_id_map[group_iter->second] = extruder_id;
-                color_group_id_to_extruder_id_map[group_iter->first] = extruder_id;
-            } else {
-                color_group_id_to_extruder_id_map[group_iter->first] = color_iter->second;
+            // Register every distinct color so multi-color groups still allocate an extruder slot per colour.
+            for (const std::string& c : group_iter->second) {
+                if (color_to_extruder_id_map.find(c) == color_to_extruder_id_map.end()) {
+                    ++extruder_id;
+                    color_to_extruder_id_map[c] = extruder_id;
+                }
+            }
+            // For triangle pid binding we still need a 1:1 group→extruder map; pick the first colour.
+            if (!group_iter->second.empty()) {
+                color_group_id_to_extruder_id_map[group_iter->first] = color_to_extruder_id_map[group_iter->second.front()];
             }
         }
 
@@ -3560,7 +3579,9 @@ void PlateData::parse_filament_info(GCodeProcessorResult *result)
     bool _BBS_3MF_Importer::_handle_start_color(const char **attributes, unsigned int num_attributes)
     {
         std::string color = bbs_get_attribute_value_string(attributes, num_attributes, COLOR_ATTR);
-        m_group_id_to_color[m_current_color_group] = color;
+        // SnapOrka: append, don't overwrite — colorgroup may contain multiple <m:color> children.
+        if (m_current_color_group >= 0 && !color.empty())
+            m_group_id_to_color[m_current_color_group].push_back(color);
         return true;
     }
 
@@ -5202,7 +5223,9 @@ void PlateData::parse_filament_info(GCodeProcessorResult *result)
     bool _BBS_3MF_Importer::ObjectImporter::_handle_object_start_color(const char **attributes, unsigned int num_attributes)
     {
         std::string color = bbs_get_attribute_value_string(attributes, num_attributes, COLOR_ATTR);
-        object_group_id_to_color[object_current_color_group] = color;
+        // SnapOrka: append, don't overwrite — multi-color group support.
+        if (object_current_color_group >= 0 && !color.empty())
+            object_group_id_to_color[object_current_color_group].push_back(color);
         return true;
     }
 
@@ -8495,7 +8518,8 @@ private:
 
 //BBS: add plate data list related logic
 bool load_bbs_3mf(const char* path, DynamicPrintConfig* config, ConfigSubstitutionContext* config_substitutions, Model* model, PlateDataPtrs* plate_data_list, std::vector<Preset*>* project_presets,
-                    bool* is_bbl_3mf, Semver* file_version, Import3mfProgressFn proFn, LoadStrategy strategy, BBLProject *project, int plate_id)
+                    bool* is_bbl_3mf, Semver* file_version, Import3mfProgressFn proFn, LoadStrategy strategy, BBLProject *project, int plate_id,
+                    std::map<int, std::vector<std::string>>* color_group_map)
 {
     if (path == nullptr || config == nullptr || model == nullptr)
         return false;
@@ -8504,6 +8528,9 @@ bool load_bbs_3mf(const char* path, DynamicPrintConfig* config, ConfigSubstituti
     CNumericLocalesSetter locales_setter;
     _BBS_3MF_Importer importer;
     bool res = importer.load_model_from_file(path, *model, *plate_data_list, *project_presets, *config, *config_substitutions, strategy, *is_bbl_3mf, *file_version, proFn, project, plate_id);
+    // SnapOrka: surface extracted colour-group metadata if caller asked for it.
+    if (color_group_map != nullptr)
+        *color_group_map = importer.get_color_group_map();
     importer.log_errors();
     //BBS: remove legacy project logic currently
     //handle_legacy_project_loaded(importer.version(), *config);
