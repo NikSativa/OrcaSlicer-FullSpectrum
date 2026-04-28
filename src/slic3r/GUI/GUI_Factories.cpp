@@ -18,6 +18,7 @@
 #include "PartPlate.hpp"
 #include "Gizmos/GLGizmoEmboss.hpp"
 #include "Gizmos/GLGizmoSVG.hpp"
+#include "Gizmos/GLGizmoAlignment.hpp"
 
 #include <boost/algorithm/string.hpp>
 #include "slic3r/GUI/Tab.hpp"
@@ -1346,6 +1347,8 @@ void MenuFactory::create_extra_object_menu()
     append_menu_item_merge_parts_to_single_part(&m_object_menu);
     // Object Center
     append_menu_item_center(&m_object_menu);
+    // Object Align/Distribute (SnapOrka: ported from BambuStudio)
+    append_menu_item_align_distribute(&m_object_menu);
     // Object Drop
     append_menu_item_drop(&m_object_menu);
     // Object Split
@@ -1925,6 +1928,77 @@ void MenuFactory::append_menu_item_drop(wxMenu* menu)
                 return (plater()->get_view3D_canvas3D()->get_selection().get_bounding_box().min.z() != 0);
             } //disable if model is on the bed / not in View3D
         }, m_parent);
+}
+
+// SnapOrka: ported from BambuStudio v2.6.0
+void MenuFactory::append_menu_item_align_distribute(wxMenu *menu)
+{
+    wxMenu* sub = new wxMenu();
+    if (!sub) return;
+
+    auto is_view3d = []() {
+        return plater()->canvas3D()->get_canvas_type() == GLCanvas3D::ECanvasType::CanvasView3D;
+    };
+    auto can_distribute = [=](GLGizmoAlignment::AlignType t) {
+        if (!is_view3d()) return false;
+        GLGizmoAlignment h(*plater()->get_view3D_canvas3D());
+        return h.can_distribute(t);
+    };
+    auto can_align = [=](GLGizmoAlignment::AlignType t) {
+        if (!is_view3d()) return false;
+        GLGizmoAlignment h(*plater()->get_view3D_canvas3D());
+        return h.can_align(t);
+    };
+
+    append_menu_item(sub, wxID_ANY, _L("Distribute left-right") + " (X)", "",
+        [](wxCommandEvent&) { plater()->distribute_selection_x(); }, "", nullptr,
+        [=]() { return can_distribute(GLGizmoAlignment::AlignType::DISTRIBUTE_X); }, m_parent);
+    append_menu_item(sub, wxID_ANY, _L("Distribute front-back") + " (Y)", "",
+        [](wxCommandEvent&) { plater()->distribute_selection_y(); }, "", nullptr,
+        [=]() { return can_distribute(GLGizmoAlignment::AlignType::DISTRIBUTE_Y); }, m_parent);
+    append_menu_item(sub, wxID_ANY, _L("Distribute top-bottom") + " (Z)", "",
+        [](wxCommandEvent&) { plater()->distribute_selection_z(); }, "", nullptr,
+        [=]() { return can_distribute(GLGizmoAlignment::AlignType::DISTRIBUTE_Z); }, m_parent);
+
+    sub->AppendSeparator();
+
+    append_menu_item(sub, wxID_ANY, _L("Align left") + " (-X)", "",
+        [](wxCommandEvent&) { plater()->align_selection_x_min(); }, "", nullptr,
+        [=]() { return can_align(GLGizmoAlignment::AlignType::X_MIN); }, m_parent);
+    append_menu_item(sub, wxID_ANY, _L("Align left-right center") + " (X)", "",
+        [](wxCommandEvent&) { plater()->align_selection_x_center(); }, "", nullptr,
+        [=]() { return can_align(GLGizmoAlignment::AlignType::CENTER_X); }, m_parent);
+    append_menu_item(sub, wxID_ANY, _L("Align right") + " (+X)", "",
+        [](wxCommandEvent&) { plater()->align_selection_x_max(); }, "", nullptr,
+        [=]() { return can_align(GLGizmoAlignment::AlignType::X_MAX); }, m_parent);
+
+    sub->AppendSeparator();
+
+    append_menu_item(sub, wxID_ANY, _L("Align front") + " (-Y)", "",
+        [](wxCommandEvent&) { plater()->align_selection_y_min(); }, "", nullptr,
+        [=]() { return can_align(GLGizmoAlignment::AlignType::Y_MIN); }, m_parent);
+    append_menu_item(sub, wxID_ANY, _L("Align front-back center") + " (Y)", "",
+        [](wxCommandEvent&) { plater()->align_selection_y_center(); }, "", nullptr,
+        [=]() { return can_align(GLGizmoAlignment::AlignType::CENTER_Y); }, m_parent);
+    append_menu_item(sub, wxID_ANY, _L("Align back") + " (+Y)", "",
+        [](wxCommandEvent&) { plater()->align_selection_y_max(); }, "", nullptr,
+        [=]() { return can_align(GLGizmoAlignment::AlignType::Y_MAX); }, m_parent);
+
+    sub->AppendSeparator();
+
+    append_menu_item(sub, wxID_ANY, _L("Align bottom") + " (-Z)", "",
+        [](wxCommandEvent&) { plater()->align_selection_z_min(); }, "", nullptr,
+        [=]() { return can_align(GLGizmoAlignment::AlignType::Z_MIN); }, m_parent);
+    append_menu_item(sub, wxID_ANY, _L("Align top-bottom center") + " (Z)", "",
+        [](wxCommandEvent&) { plater()->align_selection_z_center(); }, "", nullptr,
+        [=]() { return can_align(GLGizmoAlignment::AlignType::CENTER_Z); }, m_parent);
+    append_menu_item(sub, wxID_ANY, _L("Align top") + " (+Z)", "",
+        [](wxCommandEvent&) { plater()->align_selection_z_max(); }, "", nullptr,
+        [=]() { return can_align(GLGizmoAlignment::AlignType::Z_MAX); }, m_parent);
+
+    append_submenu(menu, sub, wxID_ANY, _L("Align/Distribute"),
+        _L("Align or distribute selected objects"), "",
+        [=]() { return is_view3d(); }, m_parent);
 }
 
 void MenuFactory::append_menu_item_per_object_process(wxMenu* menu)

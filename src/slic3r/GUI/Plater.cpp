@@ -138,6 +138,7 @@
 #include "ProjectDirtyStateManager.hpp"
 #include "Gizmos/GLGizmoSimplify.hpp" // create suggestion notification
 #include "Gizmos/GLGizmoSVG.hpp" // Drop SVG file
+#include "Gizmos/GLGizmoAlignment.hpp" // SnapOrka: align/distribute helper
 #include "Gizmos/GizmoObjectManipulation.hpp"
 
 // BBS
@@ -9141,6 +9142,19 @@ struct Plater::priv
     void reset(bool apply_presets_change = false);
     void center_selection();
     void drop_selection();
+    // SnapOrka: align + distribute (ported from BambuStudio)
+    void distribute_selection_x();
+    void distribute_selection_y();
+    void distribute_selection_z();
+    void align_selection_x_min();
+    void align_selection_x_max();
+    void align_selection_x_center();
+    void align_selection_y_min();
+    void align_selection_y_max();
+    void align_selection_y_center();
+    void align_selection_z_min();
+    void align_selection_z_max();
+    void align_selection_z_center();
     void mirror(Axis axis);
     void split_object();
     void split_volume();
@@ -11913,6 +11927,20 @@ void Plater::priv::drop_selection()
 {
     view3D->drop_selected();
 }
+
+// SnapOrka: align + distribute (ported from BambuStudio)
+void Plater::priv::distribute_selection_x() { GLGizmoAlignment h(*view3D->get_canvas3d()); h.distribute_objects(GLGizmoAlignment::AlignType::DISTRIBUTE_X); }
+void Plater::priv::distribute_selection_y() { GLGizmoAlignment h(*view3D->get_canvas3d()); h.distribute_objects(GLGizmoAlignment::AlignType::DISTRIBUTE_Y); }
+void Plater::priv::distribute_selection_z() { GLGizmoAlignment h(*view3D->get_canvas3d()); h.distribute_objects(GLGizmoAlignment::AlignType::DISTRIBUTE_Z); }
+void Plater::priv::align_selection_x_min()  { GLGizmoAlignment h(*view3D->get_canvas3d()); h.align_objects(GLGizmoAlignment::AlignType::X_MIN); }
+void Plater::priv::align_selection_x_max()  { GLGizmoAlignment h(*view3D->get_canvas3d()); h.align_objects(GLGizmoAlignment::AlignType::X_MAX); }
+void Plater::priv::align_selection_x_center(){ GLGizmoAlignment h(*view3D->get_canvas3d()); h.align_objects(GLGizmoAlignment::AlignType::CENTER_X); }
+void Plater::priv::align_selection_y_min()  { GLGizmoAlignment h(*view3D->get_canvas3d()); h.align_objects(GLGizmoAlignment::AlignType::Y_MIN); }
+void Plater::priv::align_selection_y_max()  { GLGizmoAlignment h(*view3D->get_canvas3d()); h.align_objects(GLGizmoAlignment::AlignType::Y_MAX); }
+void Plater::priv::align_selection_y_center(){ GLGizmoAlignment h(*view3D->get_canvas3d()); h.align_objects(GLGizmoAlignment::AlignType::CENTER_Y); }
+void Plater::priv::align_selection_z_min()  { GLGizmoAlignment h(*view3D->get_canvas3d()); h.align_objects(GLGizmoAlignment::AlignType::Z_MIN); }
+void Plater::priv::align_selection_z_max()  { GLGizmoAlignment h(*view3D->get_canvas3d()); h.align_objects(GLGizmoAlignment::AlignType::Z_MAX); }
+void Plater::priv::align_selection_z_center(){ GLGizmoAlignment h(*view3D->get_canvas3d()); h.align_objects(GLGizmoAlignment::AlignType::CENTER_Z); }
 
 void Plater::priv::mirror(Axis axis)
 {
@@ -20961,6 +20989,19 @@ void Plater::suppress_background_process(const bool stop_background_process)
 
 void Plater::center_selection()     { p->center_selection(); }
 void Plater::drop_selection()       { p->drop_selection(); }
+// SnapOrka: align + distribute
+void Plater::distribute_selection_x()    { p->distribute_selection_x(); }
+void Plater::distribute_selection_y()    { p->distribute_selection_y(); }
+void Plater::distribute_selection_z()    { p->distribute_selection_z(); }
+void Plater::align_selection_x_min()     { p->align_selection_x_min(); }
+void Plater::align_selection_x_max()     { p->align_selection_x_max(); }
+void Plater::align_selection_x_center()  { p->align_selection_x_center(); }
+void Plater::align_selection_y_min()     { p->align_selection_y_min(); }
+void Plater::align_selection_y_max()     { p->align_selection_y_max(); }
+void Plater::align_selection_y_center()  { p->align_selection_y_center(); }
+void Plater::align_selection_z_min()     { p->align_selection_z_min(); }
+void Plater::align_selection_z_max()     { p->align_selection_z_max(); }
+void Plater::align_selection_z_center()  { p->align_selection_z_center(); }
 void Plater::mirror(Axis axis)      { p->mirror(axis); }
 void Plater::split_object()         { p->split_object(); }
 void Plater::split_volume()         { p->split_volume(); }
