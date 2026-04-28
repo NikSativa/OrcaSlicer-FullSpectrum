@@ -2,6 +2,7 @@
 #include "Print.hpp"
 #include "BoundingBox.hpp"
 #include "ClipperUtils.hpp"
+#include "InternalBridgeDetector.hpp"  // SnapOrka: experimental internal bridge angle detection
 #include "ElephantFootCompensation.hpp"
 #include "Geometry.hpp"
 #include "I18N.hpp"
@@ -2917,6 +2918,18 @@ void PrintObject::bridge_over_infill()
                     // ORCA: Internal bridge angle override
                     if (candidate.region->region().config().internal_bridge_angle > 0)
                         bridging_angle = candidate.region->region().config().internal_bridge_angle.value * PI / 180.0; // Convert degrees to radians
+
+                    // SnapOrka: experimental smart angle detection (port from BambuStudio InternalBridgeDetector)
+                    if (candidate.region->region().config().enable_internal_bridge_detector
+                        && candidate.region->region().config().internal_bridge_angle <= 0) {
+                        ExPolygons ex = union_ex(area_to_be_bridge);
+                        ExPolygons anchor_ex = union_ex(boundary_plines.empty() ? Polygons{} : to_polygons(boundary_plines));
+                        if (!ex.empty()) {
+                            InternalBridgeDetector det(ex.front(), anchor_ex, flow.scaled_spacing());
+                            if (det.detect_angle() && det.angle >= 0)
+                                bridging_angle = det.angle;
+                        }
+                    }
 
                     boundary_plines.insert(boundary_plines.end(), anchors.begin(), anchors.end());
                     if (!lightning_area.empty() && !intersection(area_to_be_bridge, lightning_area).empty()) {

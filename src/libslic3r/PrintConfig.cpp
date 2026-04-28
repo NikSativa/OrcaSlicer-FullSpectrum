@@ -1071,6 +1071,16 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(0.));
 
+    // SnapOrka: experimental — InternalBridgeDetector (port from BambuStudio)
+    def = this->add("enable_internal_bridge_detector", coBool);
+    def->label = L("[EXP] Smart internal bridge angle");
+    def->tooltip = L("EXPERIMENTAL: Use advanced angle detection for internal bridges over sparse infill. "
+                     "Tests candidate angles at 5° resolution and picks the one with maximum line coverage and shortest spans. "
+                     "May improve anchoring on complex models. May produce unexpected results — disable if you see artifacts.");
+    def->category = L("Strength");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(false));
+
     def = this->add("bridge_density", coPercent);
     def->label = L("External bridge density");
     def->category = L("Strength");
