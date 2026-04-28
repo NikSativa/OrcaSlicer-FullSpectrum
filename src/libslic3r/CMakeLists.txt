@@ -312,6 +312,7 @@ set(lisbslic3r_sources
     NormalUtils.hpp
     NSVGUtils.cpp
     NSVGUtils.hpp
+    ObjColorUtils.cpp
     ObjColorUtils.hpp
     ObjectID.cpp
     ObjectID.hpp

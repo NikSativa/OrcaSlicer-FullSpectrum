@@ -1,8 +1,28 @@
 #pragma once
 #include <iostream>
 #include <ctime>
+#include <map>
+#include <unordered_map>
 
 #include "opencv2/opencv.hpp"
+#include "libslic3r/Color.hpp"
+
+namespace Slic3r {
+    class Model;
+
+    // SnapOrka: ported from BambuStudio v2.6.0 — color binding metadata for standard 3MF imports.
+    struct TriangleColor {
+        int pid{-1};                  // Color group ID (property ID)
+        int indices[3]{-1, -1, -1};   // Color indices for the three vertices
+    };
+
+    // Per-volume color binding for multi-volume scenarios.
+    struct VolumeColorInfo {
+        int pid{-1};
+        int pindex{-1};
+        std::vector<TriangleColor> triangle_colors;
+    };
+} // namespace Slic3r
 
 class QuantKMeans
 {
@@ -260,3 +280,60 @@ public:
         return image8UC3;
     }
 };
+
+namespace Slic3r {
+
+// SnapOrka: ported from BambuStudio v2.6.0.
+// Data-only struct for passing color extraction results between format readers and the dialog.
+// Distinct from FullSpectrum's existing ObjImportColorFn (6-param callback) — coexists, doesn't replace.
+struct ObjDialogInOut
+{
+    // input: colors array
+    std::vector<RGBA> input_colors;
+    bool              is_single_color{false};
+
+    // output: filament mapping
+    std::vector<unsigned char> filament_ids;
+    unsigned char              first_extruder_id{1};
+    bool                       deal_vertex_color{false};
+
+    // Standard3mf-specific: per-volume color binding
+    std::unordered_map<int, VolumeColorInfo>     volume_colors;
+    std::unordered_map<int, std::vector<RGBA>>   color_group_map;
+
+    Model *                  model{nullptr};
+    std::vector<RGBA>        mtl_colors;
+    std::vector<std::string> mtl_color_names;
+    bool                     first_time_using_makerlab{false};
+    std::string              ml_region;
+    std::string              ml_name;
+    std::string              ml_id;
+    std::string              lost_material_name;
+
+    enum class FormatType {
+        Obj,
+        Standard3mf
+    };
+    FormatType input_type{FormatType::Obj};
+    bool       exist_color_error{false};
+    bool       exist_texture_error{false};
+};
+
+} // namespace Slic3r
+
+bool obj_color_deal_algo(std::vector<Slic3r::RGBA> &input_colors,
+                         std::vector<Slic3r::RGBA> &cluster_colors_from_algo,
+                         std::vector<int> &         cluster_labels_from_algo,
+                         char &                     cluster_number,
+                         int                        max_cluster);
+
+// SnapOrka: ported from BambuStudio v2.6.0.
+// Extract color information from a Model imported from a non-BBS standard 3MF and convert it to
+// ObjDialogInOut format. color_group_map maps color group IDs to color arrays (e.g. "#FF0000FF").
+// volume_color_data is optional per-volume data for multi-volume scenarios.
+// Returns true if color information was successfully extracted.
+bool extract_colors_to_obj_dialog(
+    Slic3r::Model *                                                       model,
+    const std::map<int, std::vector<std::string>> &                       color_group_map,
+    const std::unordered_map<int, Slic3r::VolumeColorInfo> &              volume_color_data,
+    Slic3r::ObjDialogInOut &                                              out);

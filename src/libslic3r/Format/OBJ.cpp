@@ -99,6 +99,8 @@ bool load_obj(const char *path, TriangleMesh *meshptr, ObjInfo& obj_info, std::s
     if (exist_mtl) {
         obj_info.is_single_mtl = data.usemtls.size() == 1 && mtl_data.new_mtl_unmap.size() == 1;
         obj_info.face_colors.reserve(num_faces + num_quads);
+        // SnapOrka: ported from BambuStudio — preserve raw .mtl usemtls list for downstream colour mapping
+        obj_info.usemtls = data.usemtls;
     }
     bool has_color = data.has_vertex_color;
     for (size_t i = 0; i < num_vertices; ++ i) {
@@ -169,6 +171,11 @@ bool load_obj(const char *path, TriangleMesh *meshptr, ObjInfo& obj_info, std::s
                             obj_info.uvs.emplace_back(uv_array);
                         }
                         obj_info.face_colors.emplace_back(face_color);
+                    }
+                    else {
+                        // SnapOrka: track first lost material name for downstream warning UX
+                        if (obj_info.lost_material_name.empty())
+                            obj_info.lost_material_name = mtl_name;
                     }
                 };
                 auto set_face_color_by_mtl = [&data, &set_face_color](int face_index) {
