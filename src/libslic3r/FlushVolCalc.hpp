@@ -4,6 +4,7 @@
 #include "libslic3r.h"
 #include "Config.hpp"
 
+class GenericFlushPredictor;
 
 namespace Slic3r {
 
@@ -22,10 +23,13 @@ public:
     int calc_flush_vol(unsigned char src_a, unsigned char src_r, unsigned char src_g, unsigned char src_b,
         unsigned char dst_a, unsigned char dst_r, unsigned char dst_g, unsigned char dst_b);
 
+    void set_predictor(GenericFlushPredictor* p) { m_predictor = p; }
+
 private:
     int m_min_flush_vol;
     int m_max_flush_vol;
     float m_multiplier;
+    GenericFlushPredictor* m_predictor{ nullptr };
 };
 
 

@@ -69,6 +69,7 @@ using namespace nlohmann;
 #include "libslic3r/Thread.hpp"
 #include "libslic3r/BlacklistedLibraryCheck.hpp"
 #include "libslic3r/FlushVolCalc.hpp"
+#include "libslic3r/FlushVolPredictor.hpp"
 
 #include "libslic3r/Orient.hpp"
 #include "libslic3r/PNGReadWrite.hpp"
@@ -2840,6 +2841,13 @@ int CLI::run(int argc, char **argv)
 
             const std::vector<int>& min_flush_volumes = Slic3r::GUI::get_min_flush_volumes(m_print_config);
 
+            std::unique_ptr<GenericFlushPredictor> flush_predictor;
+            {
+                ConfigOptionBool* use_predictor_opt = m_print_config.option<ConfigOptionBool>("enable_flush_vol_predictor");
+                if (use_predictor_opt && use_predictor_opt->getBool())
+                    flush_predictor.reset(new GenericFlushPredictor(0));
+            }
+
             if (filament_is_support->size() != project_filament_count)
             {
                 BOOST_LOG_TRIVIAL(error) << boost::format("filament_is_support's count %1% not equal to filament_colour's size %2%")%filament_is_support->size() %project_filament_count;
@@ -2878,6 +2886,7 @@ int CLI::run(int argc, char **argv)
                             //       %(unsigned int)(to_rgb[0]) %(unsigned int)(to_rgb[1]) %(unsigned int)(to_rgb[2]) %(unsigned int)(to_rgb[3]);
 
                             Slic3r::FlushVolCalculator calculator(min_flush_volumes[from_idx], Slic3r::g_max_flush_volume);
+                            calculator.set_predictor(flush_predictor.get());
 
                             flushing_volume = calculator.calc_flush_vol(from_rgb[3], from_rgb[0], from_rgb[1], from_rgb[2], to_rgb[3], to_rgb[0], to_rgb[1], to_rgb[2]);
                             if (is_from_support) {

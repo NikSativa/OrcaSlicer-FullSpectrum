@@ -5947,6 +5947,17 @@ void PrintConfigDef::init_fff_params()
     //def->sidetext = "";
     def->set_default_value(new ConfigOptionFloat(0.3));
 
+    // SnapOrka: experimental — FlushVolPredictor (port from BambuStudio). Uses precomputed lab data
+    // for known color pairs and falls back to the formula-based FlushVolCalculator for other pairs.
+    def = this->add("enable_flush_vol_predictor", coBool);
+    def->label = L("[EXP] Color-pair flush prediction");
+    def->tooltip = L("EXPERIMENTAL: For known color pairs use empirical flush volume data shipped with the slicer "
+                     "(LAB DeltaE2000 nearest match). Falls back to the existing HSV/luminance formula when no "
+                     "match is found. May reduce purge volume on common color combinations.");
+    def->category = L("Multimaterial");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(false));
+
     // BBS
     def = this->add("prime_volume", coFloat);
     def->label = L("Prime volume");

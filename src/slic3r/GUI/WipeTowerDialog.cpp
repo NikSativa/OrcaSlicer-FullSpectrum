@@ -1,6 +1,9 @@
 #include <algorithm>
+#include <memory>
 #include <sstream>
 #include "libslic3r/FlushVolCalc.hpp"
+#include "libslic3r/FlushVolPredictor.hpp"
+#include "libslic3r/PresetBundle.hpp"
 #include "WipeTowerDialog.hpp"
 #include "BitmapCache.hpp"
 #include "GUI.hpp"
@@ -662,6 +665,14 @@ WipingPanel::WipingPanel(wxWindow* parent, const std::vector<float>& matrix, con
 int WipingPanel::calc_flushing_volume(const wxColour& from_, const wxColour& to_ ,int min_flush_volume)
 {
     Slic3r::FlushVolCalculator calculator(min_flush_volume, m_max_flush_volume);
+
+    std::unique_ptr<GenericFlushPredictor> predictor;
+    if (auto* preset_bundle = Slic3r::GUI::wxGetApp().preset_bundle) {
+        Slic3r::ConfigOptionBool* use_predictor_opt = preset_bundle->project_config.option<Slic3r::ConfigOptionBool>("enable_flush_vol_predictor");
+        if (use_predictor_opt && use_predictor_opt->getBool())
+            predictor.reset(new GenericFlushPredictor(0));
+    }
+    calculator.set_predictor(predictor.get());
 
     return calculator.calc_flush_vol(from_.Alpha(), from_.Red(), from_.Green(), from_.Blue(), to_.Alpha(), to_.Red(), to_.Green(), to_.Blue());
 }

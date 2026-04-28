@@ -1,8 +1,10 @@
 #include <cmath>
+#include <algorithm>
 #include <assert.h>
 #include "slic3r/Utils/ColorSpaceConvert.hpp"
 
 #include "FlushVolCalc.hpp"
+#include "FlushVolPredictor.hpp"
 
 
 namespace Slic3r {
@@ -53,6 +55,16 @@ int FlushVolCalculator::calc_flush_vol(unsigned char src_a, unsigned char src_r,
     }
     if (dst_a == 0) {
         dst_r = dst_g = dst_b = 255;
+    }
+
+    if (m_predictor) {
+        FlushPredict::RGBColor from{src_r, src_g, src_b};
+        FlushPredict::RGBColor to{dst_r, dst_g, dst_b};
+        float predicted = 0.f;
+        if (m_predictor->predict(from, to, predicted)) {
+            int vol = (int)(predicted + m_min_flush_vol);
+            return std::min(vol, m_max_flush_vol);
+        }
     }
 
     float src_r_f, src_g_f, src_b_f, dst_r_f, dst_g_f, dst_b_f;

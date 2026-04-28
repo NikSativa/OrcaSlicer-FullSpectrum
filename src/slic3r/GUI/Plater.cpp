@@ -1,5 +1,6 @@
 #include "Plater.hpp"
 #include "libslic3r/Config.hpp"
+#include "libslic3r/FlushVolPredictor.hpp"
 #include "libslic3r/MixedFilament.hpp"
 #include "libslic3r/filament_mixer.h"
 #include "common_func/common_func.hpp"
@@ -8730,6 +8731,11 @@ void Sidebar::auto_calc_flushing_volumes(const int modify_id)
     int m_max_flush_volume = Slic3r::g_max_flush_volume;
     unsigned int m_number_of_extruders = (int)(sqrt(init_matrix.size()) + 0.001);
 
+    ConfigOptionBool* use_predictor_opt = project_config.option<ConfigOptionBool>("enable_flush_vol_predictor");
+    std::unique_ptr<GenericFlushPredictor> predictor;
+    if (use_predictor_opt && use_predictor_opt->getBool())
+        predictor.reset(new GenericFlushPredictor(0));
+
     const std::vector<std::string> extruder_colours = wxGetApp().plater()->get_extruder_colors_from_plater_config(nullptr, false);
     std::vector<std::vector<wxColour>> multi_colours;
 
@@ -8757,6 +8763,7 @@ void Sidebar::auto_calc_flushing_volumes(const int modify_id)
             int from_idx = i;
             if (from_idx != modify_id) {
                 Slic3r::FlushVolCalculator calculator(min_flush_volumes[from_idx], m_max_flush_volume);
+                calculator.set_predictor(predictor.get());
                 int flushing_volume = 0;
                 bool is_from_support = is_support_filament(from_idx);
                 bool is_to_support = is_support_filament(modify_id);
@@ -8782,6 +8789,7 @@ void Sidebar::auto_calc_flushing_volumes(const int modify_id)
             int to_idx = i;
             if (to_idx != modify_id) {
                 Slic3r::FlushVolCalculator calculator(min_flush_volumes[modify_id], m_max_flush_volume);
+                calculator.set_predictor(predictor.get());
                 bool is_from_support = is_support_filament(modify_id);
                 bool is_to_support = is_support_filament(to_idx);
                 int flushing_volume = 0;
