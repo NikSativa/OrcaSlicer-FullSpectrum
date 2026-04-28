@@ -1,0 +1,26 @@
+SnapOrka: drop `defined(TARGET_OS_MAC)` from libpng's classic-Mac branch.
+
+`TARGET_OS_MAC` is defined for ALL Apple targets (not only classic Mac OS,
+also iOS / macOS / tvOS / watchOS) so libpng's legacy `#include <fp.h>` path
+fires on modern macOS where <fp.h> no longer exists.
+
+The bundled `0002-clang19-macos.patch` upstream of this one targets a different
+OpenCV libpng release and silently fails to apply on OpenCV 4.6.0's pngpriv.h
+(line offset). This stub-patch unconditionally fixes the same issue tied to
+our exact OpenCV 4.6.0 line layout.
+
+Without this, `Building C object 3rdparty/libpng/CMakeFiles/libpng.dir/png.c.o`
+fails with `'fp.h' file not found` on Xcode 26 / SDK 26 / Apple Clang 21.
+
+diff --git a/3rdparty/libpng/pngpriv.h b/3rdparty/libpng/pngpriv.h
+--- a/3rdparty/libpng/pngpriv.h
++++ b/3rdparty/libpng/pngpriv.h
+@@ -520,7 +520,7 @@
+ #  include <float.h>
+
+ #  if (defined(__MWERKS__) && defined(macintosh)) || defined(applec) || \
+-    defined(THINK_C) || defined(__SC__) || defined(TARGET_OS_MAC)
++    defined(THINK_C) || defined(__SC__)
+    /* We need to check that <math.h> hasn't already been included earlier
+     * as it seems it doesn't agree with <fp.h>, yet we should really use
+     * <fp.h> if possible.

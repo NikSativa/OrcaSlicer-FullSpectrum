@@ -28,13 +28,22 @@ if (WIN32)
   #set(_curl_platform_flags  ${_curl_platform_flags} -DCMAKE_USE_SCHANNEL=ON)
   set(_curl_platform_flags  ${_curl_platform_flags} -DCMAKE_USE_OPENSSL=ON -DCURL_CA_PATH:STRING=none)
 elseif (APPLE)
-  set(_curl_platform_flags 
-    
+  # SnapOrka: explicitly pin OpenSSL to our deps dir so curl doesn't pick up
+  # Homebrew openssl@3 from /usr/local/include (which clang adds before our -isystem
+  # paths and would make curl call SSL_get1_peer_certificate / EVP_PKEY_get_id /
+  # SSL_CTX_load_verify_dir — symbols absent from our 1.1.1w libssl.a → link fails).
+  # Prepending -I${DESTDIR}/include via CMAKE_C/CXX_FLAGS forces our headers first.
+  set(_curl_platform_flags
     ${_curl_platform_flags}
-
-    #-DCMAKE_USE_SECTRANSP:BOOL=ON 
+    #-DCMAKE_USE_SECTRANSP:BOOL=ON
     -DCMAKE_USE_OPENSSL:BOOL=ON
-
+    -DOPENSSL_ROOT_DIR:PATH=${DESTDIR}
+    -DOPENSSL_USE_STATIC_LIBS:BOOL=ON
+    -DOPENSSL_INCLUDE_DIR:PATH=${DESTDIR}/include
+    -DOPENSSL_SSL_LIBRARY:FILEPATH=${DESTDIR}/lib/libssl.a
+    -DOPENSSL_CRYPTO_LIBRARY:FILEPATH=${DESTDIR}/lib/libcrypto.a
+    -DCMAKE_C_FLAGS=-I${DESTDIR}/include
+    -DCMAKE_CXX_FLAGS=-I${DESTDIR}/include
     -DCURL_CA_PATH:STRING=none
   )
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")

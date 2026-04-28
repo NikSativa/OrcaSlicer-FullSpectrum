@@ -26,16 +26,16 @@ if (WIN32)
   endif()
 elseif (APPLE)
   # macOS: build shared libs so we get libsentry.dylib
-  # Note: CURL transport requires OpenSSL, need to link it explicitly
-  # DESTDIR already contains /usr/local/ suffix, so use it directly
-  set(_sentry_platform_flags 
+  # SnapOrka: Sentry 0.12.2 bundles libcurl 8.x which requires OpenSSL 3.x APIs
+  # (SSL_get1_peer_certificate, EVP_PKEY_get_id). Our dep_OpenSSL is 1.1.1w —
+  # link fails. Disable the network transport (Sentry still builds, crashpad
+  # still produces local dumps; only online upload is disabled — fine for our
+  # local-only crash reporting setup, AppConfig already disables update checks).
+  set(_sentry_platform_flags
     ${_sentry_platform_flags}
-    -DSENTRY_TRANSPORT_CURL=ON
+    -DSENTRY_TRANSPORT=none
     -DSENTRY_BUILD_SHARED_LIBS=ON
     -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo
-    -DOPENSSL_ROOT_DIR:PATH=${DESTDIR}
-    -DOPENSSL_USE_STATIC_LIBS:BOOL=ON
-    -DCMAKE_SHARED_LINKER_FLAGS:STRING=-L${DESTDIR}/lib\ -lssl\ -lcrypto
   )
   set(_sentry_cmake_generator -G "Unix Makefiles")
   

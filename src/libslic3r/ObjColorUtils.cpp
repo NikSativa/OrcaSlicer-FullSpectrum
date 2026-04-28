@@ -88,7 +88,11 @@ bool extract_colors_to_obj_dialog(
     for (const auto& pair : color_group_map) {
         std::vector<Slic3r::RGBA> group_colors;
         for (const auto& color_str : pair.second) {
-            Slic3r::RGBA rgba = Slic3r::convert_color_string_to_rgba(color_str);
+            // SnapOrka: BambuStudio's convert_color_string_to_rgba is absent in FullSpectrum.
+            // Use FS's decode_color → ColorRGBA → RGBA accessor pattern.
+            Slic3r::ColorRGBA rgba_color;
+            Slic3r::decode_color(color_str, rgba_color);
+            Slic3r::RGBA      rgba{rgba_color.r(), rgba_color.g(), rgba_color.b(), rgba_color.a()};
             color_str_to_rgba[color_str] = rgba;
             group_colors.emplace_back(rgba);
             bool found = false;
@@ -233,6 +237,12 @@ bool extract_colors_to_obj_dialog(
             }
             volumes_used_colors[volume->id().id] = used_colors;
 
+            // SnapOrka: ModelVolume::set_origin_mesh_render_type / origin_render_info_ptr / OriginRenderInfo
+            // are BambuStudio-only fields used to render imported colors before the user maps them to
+            // extruders. FullSpectrum does not have this rendering pipeline — the colour-extraction
+            // result (volumes_used_colors above) is still produced; only the per-volume render metadata
+            // is dropped. Wrapping the whole block under #if 0 keeps the function compilable.
+#if 0
             volume->set_origin_mesh_render_type(!deal_vertex_color);
             if (nullptr == volume->origin_render_info_ptr) {
                 volume->origin_render_info_ptr = std::make_shared<Slic3r::OriginRenderInfo>();
@@ -299,6 +309,7 @@ bool extract_colors_to_obj_dialog(
                     volume->origin_render_info_ptr->mesh_with_colors.emplace_back(std::move(pair.second), pair.first);
                 }
             }
+#endif // SnapOrka: end of BambuStudio-only origin-render block
         }
     }
 

@@ -655,8 +655,11 @@ void GLGizmoAlignment::apply_transformation(int obj_idx, int inst_idx, const Vec
 
 void GLGizmoAlignment::finish_operation(const std::string &operation_name, bool force_volume_move)
 {
+    // SnapOrka: FullSpectrum's GLCanvas3D::do_move() takes only the snapshot_type arg;
+    // BambuStudio's added force_volume_move (2nd arg) — drop it, behaviour is acceptable for align ops.
+    (void)force_volume_move;
     get_selection().notify_instance_update(-1, -1);
-    m_canvas.do_move(operation_name, force_volume_move);
+    m_canvas.do_move(operation_name);
 }
 
 bool GLGizmoAlignment::validate_selection_for_align() const
