@@ -1,4 +1,5 @@
 #include "libslic3r/Technologies.hpp"
+#include "libslic3r/FilamentHotBedNozzleRules.hpp"
 #include "GUI_App.hpp"
 #include "GUI_Init.hpp"
 #include "GUI_ObjectList.hpp"
@@ -863,6 +864,38 @@ void GUI_App::toggle_show_gcode_window()
 {
     m_show_gcode_window = !m_show_gcode_window;
     app_config->set_bool("show_gcode_window", m_show_gcode_window);
+}
+
+void GUI_App::load_filament_hot_bed_nozzle_relations()
+{
+    FilamentHotBedNozzleRules::singleton().load();
+}
+
+bool GUI_App::is_bed_filament_supported(const std::string& bed_key, const std::string& filament_type) const
+{
+    return FilamentHotBedNozzleRules::singleton().is_bed_filament_supported(bed_key, filament_type);
+}
+
+bool GUI_App::is_bed_filament_warning(const std::string& bed_key, const std::string& filament_type) const
+{
+    return FilamentHotBedNozzleRules::singleton().is_bed_filament_warning(bed_key, filament_type);
+}
+
+bool GUI_App::is_nozzle_filament_forbidden(const std::string& nozzle_key, const std::string& filament_preset_name,
+                                           NozzleType nozzle_type) const
+{
+    return FilamentHotBedNozzleRules::singleton().is_nozzle_filament_forbidden(nozzle_key, filament_preset_name, nozzle_type);
+}
+
+bool GUI_App::is_nozzle_filament_warning(const std::string& nozzle_key, const std::string& filament_preset_name,
+                                         NozzleType nozzle_type) const
+{
+    return FilamentHotBedNozzleRules::singleton().is_nozzle_filament_warning(nozzle_key, filament_preset_name, nozzle_type);
+}
+
+bool GUI_App::has_filament_hot_bed_nozzle_rules() const
+{
+    return FilamentHotBedNozzleRules::singleton().is_loaded();
 }
 
 std::vector<std::string> GUI_App::split_str(std::string src, std::string separator)
@@ -6373,6 +6406,9 @@ bool GUI_App::checked_tab(Tab* tab)
 //BBS: add preset combo box re-activate logic
 void GUI_App::load_current_presets(bool active_preset_combox/*= false*/, bool check_printer_presets_ /*= true*/)
 {
+    // Reload filament/bed/nozzle rules in case PresetUpdater installed a fresh filament_hot_bed_nozzles.json
+    load_filament_hot_bed_nozzle_relations();
+
     // check printer_presets for the containing information about "Print Host upload"
     // and create physical printer from it, if any exists
     if (check_printer_presets_)

@@ -24,6 +24,7 @@
 
 #include <functional>
 #include <set>
+#include <vector>
 
 #include "calib.hpp"
 
@@ -38,6 +39,9 @@ class SupportLayer;
 // BBS
 class TreeSupportData;
 class TreeSupport;
+class PresetCollection;
+class PresetBundle;
+struct NozzleFilamentRuleMismatch;
 
 #define MAX_OUTER_NOZZLE_DIAMETER   4
 // BBS: move from PrintObjectSlice.cpp
@@ -939,6 +943,14 @@ public:
     bool                has_support_material() const;
     // Make sure the background processing has no access to this model_object during this call!
     void                auto_assign_extruders(ModelObject* model_object) const;
+
+    // On-demand evaluation vs filament_hot_bed_nozzles.json (calls extruders(true) once internally).
+    void                filament_rule_mismatch_flags(NozzleFilamentRuleMismatch& out_nozzle_mismatch,
+                                                     bool& out_gesp,
+                                                     bool& out_pei_not_pla,
+                                                     bool& out_pei_tpu,
+                                                     const PresetBundle* preset_bundle = nullptr) const;
+
 
     const PrintConfig&          config() const { return m_config; }
     const PrintObjectConfig&    default_object_config() const { return m_default_object_config; }

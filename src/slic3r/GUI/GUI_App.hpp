@@ -433,6 +433,15 @@ private:
     wxGLContext*    init_glcontext(wxGLCanvas& canvas);
     bool            init_opengl();
 
+    void            load_filament_hot_bed_nozzle_relations();
+    bool            has_filament_hot_bed_nozzle_rules() const;
+    bool            is_bed_filament_supported(const std::string& bed_key, const std::string& filament_type) const;
+    bool            is_bed_filament_warning(const std::string& bed_key, const std::string& filament_type) const;
+    bool            is_nozzle_filament_forbidden(const std::string& nozzle_key, const std::string& filament_preset_name,
+                                               Slic3r::NozzleType nozzle_type = Slic3r::NozzleType::ntUndefine) const;
+    bool            is_nozzle_filament_warning(const std::string& nozzle_key, const std::string& filament_preset_name,
+                                               Slic3r::NozzleType nozzle_type = Slic3r::NozzleType::ntUndefine) const;
+
     void            init_download_path();
 #if wxUSE_WEBVIEW_EDGE
     void            init_webview_runtime();
