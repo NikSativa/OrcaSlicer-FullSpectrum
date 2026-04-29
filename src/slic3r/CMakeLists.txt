@@ -313,16 +313,6 @@ set(SLIC3R_GUI_SOURCES
     GUI/NotificationManager.hpp
     GUI/OAuthDialog.cpp
     GUI/OAuthDialog.hpp
-    GUI/AddColorMixDialog.cpp
-    GUI/AddColorMixDialog.hpp
-    GUI/MixedGradientSelector.hpp
-    GUI/MixedGradientSelector.cpp
-    GUI/MixedColorMatchPanel.cpp
-    GUI/MixedColorMatchPanel.hpp
-    GUI/MixedColorMatchHelpers.hpp
-    GUI/MixedColorMatchHelpers.cpp
-    GUI/MixedFilamentColorMapPanel.hpp
-    GUI/MixedFilamentColorMapPanel.cpp
     GUI/ObjColorDialog.cpp
     GUI/ObjColorDialog.hpp
     GUI/ObjectDataViewModel.cpp
