@@ -1,5 +1,6 @@
 #include "Plater.hpp"
 #include "libslic3r/Config.hpp"
+#include "libslic3r/FilamentHotBedNozzleRules.hpp"
 #include "libslic3r/FlushVolPredictor.hpp"
 #include "libslic3r/MixedFilament.hpp"
 #include "libslic3r/filament_mixer.h"
@@ -247,6 +248,16 @@ MixedColorMatchRecipeResult prompt_best_color_match_recipe(wxWindow *parent,
                                                            const std::vector<std::string> &physical_colors,
                                                            const wxColour &initial_color);
 double color_delta_e00(const wxColour &lhs, const wxColour &rhs);
+
+// SnapOrka: localised label for nozzle material identifier strings used by FilamentHotBedNozzleRules.
+static wxString nozzle_type_key_to_label(const std::string& key)
+{
+    if (key == "hardened_steel")  return _L("Hardened Steel");
+    if (key == "stainless_steel") return _L("Stainless Steel");
+    if (key == "brass")           return _L("Brass");
+    if (key == "undefine")        return _L("Unknown");
+    return wxString::FromUTF8(key);
+}
 
 namespace {
 
@@ -9199,6 +9210,8 @@ struct Plater::priv
     }
 
     void process_validation_warning(StringObjectException const &warning) const;
+    // SnapOrka: surface FilamentHotBedNozzleRules mismatches as user notifications after slicing apply.
+    void notify_filament_compatibility_after_apply();
 
     bool background_processing_enabled() const {
 #ifdef SUPPORT_BACKGROUND_PROCESSING
@@ -12129,6 +12142,60 @@ void Plater::priv::process_validation_warning(StringObjectException const &warni
     }
 }
 
+// SnapOrka: ported from BambuStudio v2.6.0 / SM. Reads filament_hot_bed_nozzles.json rules
+// and pushes user-visible warnings after slicing apply when a filament/nozzle/bed combination
+// is forbidden or risky. Engine source: libslic3r/FilamentHotBedNozzleRules.cpp.
+void Plater::priv::notify_filament_compatibility_after_apply()
+{
+    if (printer_technology != ptFFF)
+        return;
+    if (q->only_gcode_mode())
+        return;
+
+    Slic3r::Print *print = background_process.fff_print();
+    if (print == nullptr)
+        return;
+
+    Slic3r::NozzleFilamentRuleMismatch nozzle_mismatch;
+    bool                               isGraphicMatch(false), isPeiBedMatchNotPla(false), isPeiBedMatchTpu(false);
+
+    print->filament_rule_mismatch_flags(nozzle_mismatch, isGraphicMatch, isPeiBedMatchNotPla, isPeiBedMatchTpu,
+                                        wxGetApp().preset_bundle);
+
+    wxString filamentMismatchNozzleWarning;
+    if (nozzle_mismatch.has_mismatch) {
+        const wxString currentNozzle = wxString::FromUTF8(nozzle_mismatch.nozzle_diameter_mm);
+        const wxString nozzleType    = nozzle_type_key_to_label(nozzle_mismatch.nozzle_type_key);
+        const wxString filamentdata =
+            nozzle_mismatch.filament_preset_name.empty() ? _L("(unknown)")
+                                                         : wxString::FromUTF8(nozzle_mismatch.filament_preset_name);
+        filamentMismatchNozzleWarning =
+            wxString::Format(_L("Note: Using a %s mm %s nozzle for %s is not recommended."), currentNozzle, nozzleType, filamentdata);
+    }
+    wxString filamentMismatchPeiBedMsgNotPla = wxString(_L("Note: Filament may not adhere well to the smooth PEI plate on the first layer. Apply glue before printing."));
+    wxString filamentMismatchPeiBedMsgTpu    = wxString(_L("Note: Filament may stick too strongly to the smooth PEI plate. Apply glue to protect the plate and ease part removal."));
+    wxString filamentMismatchGraphicBedMsg   = wxString(_L("Note: Low adhesion to the graphic effect plate may cause failure. Use a different filament instead."));
+
+    if (isPeiBedMatchTpu && isPeiBedMatchNotPla)
+        isPeiBedMatchNotPla = false;
+
+    if (isGraphicMatch || isPeiBedMatchNotPla) {
+        notification_manager->close_notification_of_type(NotificationType::CustomNotification);
+
+        if (isGraphicMatch)
+            notification_manager->push_notification(into_u8(filamentMismatchGraphicBedMsg), 0);
+        if (isPeiBedMatchNotPla)
+            notification_manager->push_notification(into_u8(filamentMismatchPeiBedMsgNotPla), 0);
+        notification_manager->set_slicing_progress_hidden();
+    }
+
+    if (nozzle_mismatch.has_mismatch)
+        notification_manager->push_notification(into_u8(filamentMismatchNozzleWarning), 0);
+
+    if (isPeiBedMatchTpu)
+        notification_manager->push_notification(into_u8(filamentMismatchPeiBedMsgTpu), 0);
+}
+
 
 // Update background processing thread from the current config and Model.
 // Returns a bitmask of UpdateBackgroundProcessReturnState.
@@ -12153,6 +12220,8 @@ unsigned int Plater::priv::update_background_process(bool force_validation, bool
         this->preview->update_gcode_result(partplate_list.get_current_slice_result());
     }
     Print::ApplyStatus invalidated = background_process.apply(this->model, wxGetApp().preset_bundle->full_config());
+    // SnapOrka: surface FilamentHotBedNozzleRules warnings (PA-CF on smooth PEI etc.) right after apply.
+    notify_filament_compatibility_after_apply();
 
     if ((invalidated == Print::APPLY_STATUS_CHANGED) || (invalidated == Print::APPLY_STATUS_INVALIDATED))
         // BBS: add only gcode mode
@@ -21207,6 +21276,8 @@ void Plater::apply_background_progress()
     bool result_valid = part_plate->is_slice_result_valid();
     //always apply the current plate's print
     Print::ApplyStatus invalidated = p->background_process.apply(this->model(), wxGetApp().preset_bundle->full_config());
+    // SnapOrka: surface FilamentHotBedNozzleRules warnings.
+    p->notify_filament_compatibility_after_apply();
 
     BOOST_LOG_TRIVIAL(info) << __FUNCTION__ << boost::format(" %1%: plate %2%, after apply, invalidated= %3%, previous result_valid %4% ") % __LINE__ % plate_index % invalidated % result_valid;
     if (invalidated & PrintBase::APPLY_STATUS_INVALIDATED)
@@ -21246,6 +21317,8 @@ int Plater::select_plate(int plate_index, bool need_slice)
 
         //always apply the current plate's print
         invalidated = p->background_process.apply(this->model(), wxGetApp().preset_bundle->full_config());
+        // SnapOrka: surface FilamentHotBedNozzleRules warnings.
+        p->notify_filament_compatibility_after_apply();
         bool model_fits, validate_err;
 
         BOOST_LOG_TRIVIAL(info) << __FUNCTION__ << boost::format(" %1%: plate %2%, after apply, invalidated= %3%, previous result_valid %4% ")%__LINE__ %plate_index  %invalidated %result_valid;
@@ -21552,6 +21625,8 @@ int Plater::select_plate_by_hover_id(int hover_id, bool right_click, bool isModi
             part_plate->get_print(&print, &gcode_result, NULL);
             //always apply the current plate's print
             invalidated = p->background_process.apply(this->model(), wxGetApp().preset_bundle->full_config());
+            // SnapOrka: surface FilamentHotBedNozzleRules warnings.
+            p->notify_filament_compatibility_after_apply();
             bool model_fits, validate_err;
             validate_current_plate(model_fits, validate_err);
 
