@@ -11030,6 +11030,9 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
                             return -1;
                         }, linear, angle, split_compound);
                 }else {
+                    // SnapOrka: capture <m:colorgroup> data from non-BBS 3MF imports so we can
+                    // surface a "found N colours, auto-mapped to extruders 1..N" notification.
+                    std::map<int, std::vector<std::string>> imported_color_groups;
                     model = Slic3r::Model:: read_from_file(
                     path.string(), nullptr, nullptr, strategy, &plate_data, &project_presets, &is_xxx, &file_version, nullptr,
                     [this, &dlg, real_filename, &progress_percent, &file_percent, INPUT_FILES_RATIO, total_files, i, &designer_model_id, &designer_country_code](int current, int total, bool &cancel, std::string &mode_id, std::string &code)
@@ -11045,7 +11048,19 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
                             cont          = dlg.Update(progress_percent, msg);
                             cancel        = !cont;
                     },
-                    nullptr, 0, obj_color_fun);
+                    nullptr, 0, obj_color_fun, &imported_color_groups);
+
+                    // SnapOrka: if a non-BBS 3MF declared <m:colorgroup> entries, FS auto-maps each
+                    // group to a unique extruder at parse time. Emit a notification so the user knows
+                    // they can adjust per-object extruder assignment via the Object panel.
+                    if (!is_xxx /*is_bbl_3mf*/ && !imported_color_groups.empty() && notification_manager) {
+                        size_t total_colors = 0;
+                        for (const auto &kv : imported_color_groups)
+                            total_colors += kv.second.size();
+                        const std::string msg = (boost::format(_u8L("Imported 3MF declares %1% colour group(s) with %2% colour(s); auto-mapped to extruders.")) %
+                                                 imported_color_groups.size() % total_colors).str();
+                        notification_manager->push_notification(NotificationType::CustomNotification, NotificationManager::NotificationLevel::ImportantNotificationLevel, msg);
+                    }
                 }
 
                 if (designer_model_id.empty() && boost::algorithm::iends_with(path.string(), ".stl")) {

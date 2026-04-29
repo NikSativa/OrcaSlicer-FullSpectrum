@@ -238,7 +238,8 @@ Model Model::read_from_file(const std::string&                                  
                             ImportstlProgressFn                                 stlFn,
                             BBLProject *                                        project,
                             int                                                 plate_id,
-                            ObjImportColorFn                                    objFn)
+                            ObjImportColorFn                                    objFn,
+                            std::map<int, std::vector<std::string>>*            color_groups)
 {
     Model model;
 
@@ -308,7 +309,8 @@ Model Model::read_from_file(const std::string&                                  
         // BBS: backup & restore
         //FIXME options & LoadStrategy::CheckVersion ?
         //BBS: is_xxx is used for is_bbs_3mf when load 3mf
-        result = load_bbs_3mf(input_file.c_str(), config, config_substitutions, &model, plate_data, project_presets, is_xxx, file_version, proFn, options, project, plate_id);
+        // SnapOrka: forward color_groups output param so callers can react to <m:colorgroup> imports.
+        result = load_bbs_3mf(input_file.c_str(), config, config_substitutions, &model, plate_data, project_presets, is_xxx, file_version, proFn, options, project, plate_id, color_groups);
 #ifdef __APPLE__
     else if (boost::algorithm::iends_with(input_file, ".usd") || boost::algorithm::iends_with(input_file, ".usda") ||
              boost::algorithm::iends_with(input_file, ".usdc") || boost::algorithm::iends_with(input_file, ".usdz") ||

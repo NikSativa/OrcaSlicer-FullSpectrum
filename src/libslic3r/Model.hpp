@@ -1592,7 +1592,11 @@ public:
                                 ImportstlProgressFn        stlFn                = nullptr,
                                 BBLProject *               project              = nullptr,
                                 int                        plate_id             = 0,
-                                ObjImportColorFn           objFn                = nullptr
+                                ObjImportColorFn           objFn                = nullptr,
+                                // SnapOrka: optional output map of <m:colorgroup> ID → list of hex colours,
+                                // populated by 3MF imports (BBS and standard alike) so callers can show a
+                                // "found N colours" notification or remap dialog.
+                                std::map<int, std::vector<std::string>>* color_groups = nullptr
                                 );
     // BBS
     static bool    obj_import_vertex_color_deal(const std::vector<unsigned char> &vertex_filament_ids, const unsigned char &first_extruder_id, Model *model);
