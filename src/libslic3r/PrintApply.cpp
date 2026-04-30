@@ -1406,6 +1406,8 @@ Print::ApplyStatus Print::apply(const Model &model, DynamicPrintConfig new_full_
                                                  mixed_height_lower,
                                                  mixed_height_upper,
                                                  mixed_advanced_dither);
+    // SnapOrka: master toggle — when off, manager keeps state but resolve()/etc return identity.
+    m_mixed_filament_mgr.set_active(m_config.option<ConfigOptionBool>("enable_mixed_filaments")->value);
     size_t mixed_custom_count = 0;
     for (const auto &mf : m_mixed_filament_mgr.mixed_filaments())
         if (mf.custom)

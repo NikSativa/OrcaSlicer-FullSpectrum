@@ -110,6 +110,11 @@ struct MixedFilament
                origin_auto  == rhs.origin_auto;
     }
     bool operator!=(const MixedFilament &rhs) const { return !(*this == rhs); }
+
+    // SnapOrka: dominant physical filament ID for this mixed row, used by the master-toggle
+    // reversion path (toggle OFF + confirm). Gradient rows pick the id with the largest
+    // weight; pair rows pick component_a when mix_b_percent <= 50, else component_b.
+    unsigned int dominant_physical_id() const;
 };
 
 struct MixedFilamentPreviewSettings
@@ -283,6 +288,13 @@ public:
     // Total filament count = num_physical + number of *enabled* mixed filaments.
     size_t total_filaments(size_t num_physical) const { return num_physical + enabled_count(); }
 
+    // SnapOrka: master gate. When inactive, resolve()/resolve_perimeter()/
+    // effective_painted_region_filament_id() return the input filament_id unchanged
+    // (identity pass-through). State is preserved so flipping back on restores
+    // previous mixed behaviour. Default true keeps historic call sites working.
+    void set_active(bool active) { m_active = active; }
+    bool is_active() const { return m_active; }
+
     // Return the display colours of all enabled mixed filaments (in order).
     std::vector<std::string> display_colors() const;
     void set_display_context(const MixedFilamentDisplayContext &context);
@@ -303,6 +315,9 @@ private:
     float                      m_height_lower_bound  = 0.04f;
     float                      m_height_upper_bound  = 0.16f;
     bool                       m_advanced_dithering  = false;
+    // SnapOrka: master toggle mirror. Default true so existing callers (preset bundle setup,
+    // tests, headless CLI) keep behaving as before unless the GUI explicitly turns it off.
+    bool                       m_active              = true;
     uint64_t                   m_next_stable_id      = 1;
     MixedFilamentDisplayContext m_display_context;
 };

@@ -1364,6 +1364,7 @@ PRINT_CONFIG_CLASS_DERIVED_DEFINE(
     ((ConfigOptionBool,               ooze_prevention))
     ((ConfigOptionString,             filename_format))
     ((ConfigOptionStrings,            post_process))
+    ((ConfigOptionBool,               enable_mixed_filaments))
     ((ConfigOptionFloat,              mixed_color_layer_height_a))
     ((ConfigOptionFloat,              mixed_color_layer_height_b))
     ((ConfigOptionBool,               mixed_filament_gradient_mode))

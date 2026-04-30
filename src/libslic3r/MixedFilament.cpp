@@ -816,6 +816,31 @@ static std::vector<int> decode_gradient_component_weights(const std::string &wei
     return (sum > 0) ? normalized : std::vector<int>();
 }
 
+// SnapOrka: dominant physical filament id for a mixed row. Used by
+// Plater::revert_mixed_filaments_to_dominant_physical() when the master toggle is turned off
+// with an explicit confirmation. Falls back to component_a for malformed input.
+unsigned int MixedFilament::dominant_physical_id() const
+{
+    if (!gradient_component_ids.empty()) {
+        // 9 is "max physical" used by the existing decoder; we just need it large enough to
+        // accept any id present in the encoded list.
+        const std::vector<unsigned int> ids = decode_gradient_component_ids(gradient_component_ids, 9);
+        if (!ids.empty()) {
+            const std::vector<int> weights = decode_gradient_component_weights(gradient_component_weights, ids.size());
+            if (!weights.empty() && weights.size() == ids.size()) {
+                size_t best = 0;
+                for (size_t i = 1; i < weights.size(); ++i)
+                    if (weights[i] > weights[best])
+                        best = i;
+                return ids[best];
+            }
+            // No weights stored — first id wins (it's the documented "primary" component).
+            return ids[0];
+        }
+    }
+    return (mix_b_percent <= 50) ? component_a : component_b;
+}
+
 static std::vector<unsigned int> build_weighted_gradient_sequence(const std::vector<unsigned int> &ids,
                                                                   const std::vector<int>          &weights)
 {
@@ -1926,6 +1951,7 @@ unsigned int MixedFilamentManager::resolve(unsigned int filament_id,
                                            float        layer_height,
                                            bool         force_height_weighted) const
 {
+    if (!m_active) return filament_id; // SnapOrka: master toggle off — identity pass-through
     const int mixed_idx = mixed_index_from_filament_id(filament_id, num_physical);
     if (mixed_idx < 0)
         return filament_id;
@@ -1995,6 +2021,7 @@ unsigned int MixedFilamentManager::resolve_perimeter(unsigned int filament_id,
                                                      float        layer_height,
                                                      bool         force_height_weighted) const
 {
+    if (!m_active) return filament_id; // SnapOrka: master toggle off — identity pass-through
     const int mixed_idx = mixed_index_from_filament_id(filament_id, num_physical);
     if (mixed_idx < 0)
         return filament_id;
@@ -2026,6 +2053,7 @@ unsigned int MixedFilamentManager::effective_painted_region_filament_id(unsigned
                                                                         float        layer_height_b,
                                                                         float        base_layer_height) const
 {
+    if (!m_active) return filament_id; // SnapOrka: master toggle off — identity pass-through
     const int mixed_idx = mixed_index_from_filament_id(filament_id, num_physical);
     if (mixed_idx < 0)
         return filament_id;
@@ -2061,6 +2089,7 @@ float MixedFilamentManager::component_surface_offset(unsigned int filament_id,
                                                      float        layer_height,
                                                      bool         force_height_weighted) const
 {
+    if (!m_active) return 0.f; // SnapOrka: master toggle off — no surface offset
     const MixedFilament *mixed_row = mixed_filament_from_id(filament_id, num_physical);
     if (mixed_row == nullptr)
         return 0.f;

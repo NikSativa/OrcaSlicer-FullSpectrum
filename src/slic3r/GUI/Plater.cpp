@@ -6968,6 +6968,20 @@ void Sidebar::update_mixed_filament_panel(bool sync_manager)
     if (!p->m_panel_mixed_filaments_title || !p->m_panel_mixed_filaments_content)
         return;
 
+    // SnapOrka: master toggle hides the entire panel — kills "Add Gradient" / "Add Pattern" /
+    // "Add Color" entry points so the user cannot accidentally create new mixed slots while
+    // mixed filaments are disabled. Stored slots remain (consultative gate).
+    {
+        auto *bundle = wxGetApp().preset_bundle;
+        const bool master_on = bundle && bundle->project_config.opt_bool("enable_mixed_filaments");
+        if (!master_on) {
+            p->m_panel_mixed_filaments_title->Hide();
+            p->m_panel_mixed_filaments_content->Hide();
+            this->Layout();
+            return;
+        }
+    }
+
     wxWindowUpdateLocker noUpdates_sidebar(this);
     wxWindowUpdateLocker noUpdates_mixed_panel(p->m_panel_mixed_filaments_content);
 
@@ -9019,6 +9033,10 @@ struct Plater::priv
     ~priv();
     bool confirm_auto_generated_gradients(wxWindow *parent, size_t num_physical);
     void set_auto_generated_gradient_decision(size_t num_physical, bool create_auto_gradients);
+    // SnapOrka: master mixed-filament toggle reversion. Strips all mixed/gradient slots from
+    // the project, builds a remap virtual_id → dominant physical_id, hands it to the existing
+    // PresetBundle remap pipeline so painted facets are rewritten via on_filaments_change().
+    void revert_mixed_filaments_to_dominant_physical();
 
 
     bool need_update() const { return m_need_update; }
@@ -10545,6 +10563,7 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
                             if (current_project_empty) {
                                 static const t_config_option_keys imported_project_option_keys = {
                                     "filament_colour",
+                                    "enable_mixed_filaments", // SnapOrka: master toggle round-trips with project
                                     "mixed_filament_definitions",
                                     "mixed_filament_gradient_mode",
                                     "mixed_filament_height_lower_bound",
@@ -10560,6 +10579,19 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
                                     "dithering_local_z_direct_multicolor",
                                     "dithering_step_painted_zones_only"
                                 };
+                                // SnapOrka: auto-enable master toggle when imported 3MF declares
+                                // any mixed/gradient/local-Z data. Otherwise leave the toggle alone
+                                // (preserves user's explicit choice on plain 3MF imports).
+                                {
+                                    const bool imported_has_mixed =
+                                        !config_loaded.opt_string("mixed_filament_definitions").empty() ||
+                                        config_loaded.opt_bool("mixed_filament_gradient_mode") ||
+                                        config_loaded.opt_bool("dithering_local_z_mode") ||
+                                        config_loaded.opt_bool("dithering_local_z_whole_objects") ||
+                                        config_loaded.opt_bool("dithering_local_z_direct_multicolor");
+                                    if (imported_has_mixed)
+                                        config_loaded.set_key_value("enable_mixed_filaments", new ConfigOptionBool(true));
+                                }
                                 preset_bundle->project_config.apply_only(config_loaded, imported_project_option_keys, true);
                                 if (current_num_filaments != desired_physical_filaments) {
                                     q->confirm_auto_generated_gradients(desired_physical_filaments);
@@ -10579,6 +10611,17 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
                                 }
                                 q->confirm_auto_generated_gradients(desired_physical_filaments);
                                 preset_bundle->set_num_filaments(unsigned(desired_physical_filaments), new_colors);
+                                // SnapOrka: same auto-enable rule as the geometry-only-import branch above.
+                                {
+                                    const bool imported_has_mixed =
+                                        !config_loaded.opt_string("mixed_filament_definitions").empty() ||
+                                        config_loaded.opt_bool("mixed_filament_gradient_mode") ||
+                                        config_loaded.opt_bool("dithering_local_z_mode") ||
+                                        config_loaded.opt_bool("dithering_local_z_whole_objects") ||
+                                        config_loaded.opt_bool("dithering_local_z_direct_multicolor");
+                                    if (imported_has_mixed)
+                                        preset_bundle->project_config.set_key_value("enable_mixed_filaments", new ConfigOptionBool(true));
+                                }
                                 wxGetApp().plater()->on_filaments_change(desired_physical_filaments);
                             }
                         }
@@ -14530,6 +14573,56 @@ void Plater::set_auto_generated_gradient_decision(size_t num_physical, bool crea
         p->set_auto_generated_gradient_decision(num_physical, create_auto_gradients);
     else
         MixedFilamentManager::set_auto_generate_enabled(create_auto_gradients);
+}
+
+// SnapOrka: master toggle reversion. Called from Tab::m_on_change after the user explicitly
+// confirms turning OFF the master mixed-filament toggle while mixed slots are active.
+void Plater::priv::revert_mixed_filaments_to_dominant_physical()
+{
+    auto *bundle = wxGetApp().preset_bundle;
+    if (bundle == nullptr)
+        return;
+    auto &mgr = bundle->mixed_filaments;
+    if (mgr.enabled_count() == 0)
+        return;
+
+    const size_t num_physical = bundle->filament_presets.size();
+    const std::vector<MixedFilament> old_rows = mgr.mixed_filaments();
+    const size_t old_total = num_physical + mgr.enabled_count();
+
+    // Build remap: physicals identity, virtuals → dominant physical.
+    // Index 0 is unused (filament IDs are 1-based); size = old_total + 1.
+    std::vector<unsigned int> remap(old_total + 1, 0);
+    for (size_t i = 1; i <= num_physical; ++i)
+        remap[i] = static_cast<unsigned int>(i);
+    size_t virt_id = num_physical + 1;
+    for (const MixedFilament &row : old_rows) {
+        if (!row.enabled || row.deleted)
+            continue; // disabled rows do not consume a virtual id slot
+        if (virt_id <= old_total) {
+            unsigned int dominant = row.dominant_physical_id();
+            if (dominant < 1 || dominant > num_physical)
+                dominant = 1; // safety: clamp to first physical
+            remap[virt_id++] = dominant;
+        }
+    }
+
+    bundle->stash_filament_id_remap(std::move(remap));
+    mgr.clear_custom_entries();
+    bundle->project_config.set_key_value("mixed_filament_definitions", new ConfigOptionString(""));
+    mgr.set_active(false);
+
+    // Reuse the existing remap pipeline. on_filaments_change() consumes m_last_filament_id_remap
+    // and walks model volumes via ModelVolume::remap_extruder_ids() to rewrite painted facets.
+    q->on_filaments_change(num_physical);
+    if (sidebar)
+        sidebar->update_mixed_filament_panel();
+}
+
+void Plater::revert_mixed_filaments_to_dominant_physical()
+{
+    if (p != nullptr)
+        p->revert_mixed_filaments_to_dominant_physical();
 }
 
 void Plater::priv::on_filament_color_changed(wxCommandEvent &event)

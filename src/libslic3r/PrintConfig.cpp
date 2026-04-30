@@ -4235,6 +4235,19 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(0.0));
 
+    // SnapOrka: master switch — when off, every mixed-filament feature below is ignored at slice
+    // time and the Mixed Filaments sidebar panel is hidden. Stored mixed_filament_definitions is
+    // preserved so the user can re-enable later. Default off (most users print monochrome).
+    def = this->add("enable_mixed_filaments", coBool);
+    def->label = L("Enable mixed filaments");
+    def->category = L("Multimaterial");
+    def->tooltip = L("Master switch for mixed-filament features (gradients, layer-cycle, "
+                     "Local-Z dithering). Off by default. When off, any mixed/gradient slots "
+                     "currently defined are ignored at slice time; toggle on to restore them. "
+                     "Auto-enabled when importing a 3MF that already declares mixed filaments.");
+    def->mode = comSimple;
+    def->set_default_value(new ConfigOptionBool(false));
+
     def = this->add("mixed_filament_gradient_mode", coBool);
     def->label = L("Height-weighted cadence");
     def->category = L("Others");

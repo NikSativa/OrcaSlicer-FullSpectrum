@@ -1556,6 +1556,34 @@ void Tab::on_value_change(const std::string& opt_key, const boost::any& value)
         update_wiping_button_visibility();
     }
 
+    // SnapOrka: master mixed-filament toggle. When user turns it OFF and there are active
+    // mixed slots, confirm before destructive reversion (strip slots + repaint regions to
+    // dominant physical filament). Click No → revert toggle back to ON.
+    if (opt_key == "enable_mixed_filaments") {
+        const bool turning_off = !boost::any_cast<bool>(value);
+        auto *bundle = wxGetApp().preset_bundle;
+        const bool has_active = bundle && bundle->mixed_filaments.enabled_count() > 0;
+        if (turning_off && has_active) {
+            MessageDialog dlg(wxGetApp().plater(),
+                _L("Disabling mixed filaments will remove all mixed and gradient slots from this project "
+                   "and revert painted regions to the dominant physical filament of each slot. Continue?"),
+                _L("Disable mixed filaments"), wxICON_WARNING | wxYES | wxNO);
+            if (dlg.ShowModal() != wxID_YES) {
+                DynamicPrintConfig new_conf = *m_config;
+                new_conf.set_key_value("enable_mixed_filaments", new ConfigOptionBool(true));
+                m_config_manipulation.apply(m_config, &new_conf);
+                wxGetApp().plater()->update();
+                return;
+            }
+            wxGetApp().plater()->revert_mixed_filaments_to_dominant_physical();
+        }
+        // Sync the manager's master flag so any in-flight resolve() call reflects the change
+        // even before Print::apply runs again.
+        if (bundle)
+            bundle->mixed_filaments.set_active(!turning_off);
+        wxGetApp().plater()->update();
+    }
+
     if (opt_key == "dithering_local_z_mode") {
         const bool local_z_enabled = boost::any_cast<bool>(value);
         if (local_z_enabled &&
@@ -2608,6 +2636,22 @@ void TabPrint::build()
         optgroup->append_single_option_line("interlocking_depth", "multimaterial_settings_advanced#interlocking-depth");
         optgroup->append_single_option_line("interlocking_boundary_avoidance", "multimaterial_settings_advanced#interlocking-boundary-avoidance");
 
+        // SnapOrka: Mixed Filaments cluster — relocated from the Others page so the master
+        // toggle and its dependent dithering options sit alongside the rest of multimaterial.
+        optgroup = page->new_optgroup(L("Mixed Filaments"));
+        optgroup->append_single_option_line("enable_mixed_filaments");
+        optgroup->append_single_option_line("mixed_filament_height_lower_bound");
+        optgroup->append_single_option_line("mixed_filament_height_upper_bound");
+        optgroup->append_single_option_line("mixed_filament_advanced_dithering");
+        optgroup->append_single_option_line("mixed_filament_component_bias_enabled");
+        optgroup->append_single_option_line("mixed_filament_surface_indentation");
+        optgroup->append_single_option_line("mixed_filament_region_collapse");
+        optgroup->append_single_option_line("dithering_z_step_size");
+        optgroup->append_single_option_line("dithering_local_z_mode");
+        optgroup->append_single_option_line("dithering_local_z_whole_objects");
+        optgroup->append_single_option_line("dithering_local_z_direct_multicolor");
+        optgroup->append_single_option_line("dithering_step_painted_zones_only");
+
 page = add_options_page(L("Others"), "custom-gcode_other"); // ORCA: icon only visible on placeholders
         optgroup = page->new_optgroup(L("Skirt"), L"param_skirt");
 optgroup->append_single_option_line("skirt_loops", "others_settings_skirt#loops");
@@ -2639,24 +2683,9 @@ optgroup->append_single_option_line("skirt_loops", "others_settings_skirt#loops"
 
         optgroup->append_single_option_line("timelapse_type", "others_settings_special_mode#timelapse");
 
-        // Use default (no icon) here to avoid runtime bitmap load failures.
-        optgroup = page->new_optgroup(L("Mixed Filaments"));
-        // Height-weighted cadence is no longer exposed in the Others tab.
-        // optgroup->append_single_option_line("mixed_filament_gradient_mode");
-        optgroup->append_single_option_line("mixed_filament_height_lower_bound");
-        optgroup->append_single_option_line("mixed_filament_height_upper_bound");
-        optgroup->append_single_option_line("mixed_filament_advanced_dithering");
-        // Pointillisme controls are retired; keep config keys for compatibility only.
-        // optgroup->append_single_option_line("mixed_filament_pointillism_pixel_size");
-        // optgroup->append_single_option_line("mixed_filament_pointillism_line_gap");
-        optgroup->append_single_option_line("mixed_filament_component_bias_enabled");
-        optgroup->append_single_option_line("mixed_filament_surface_indentation");
-        optgroup->append_single_option_line("mixed_filament_region_collapse");
-        optgroup->append_single_option_line("dithering_z_step_size");
-        optgroup->append_single_option_line("dithering_local_z_mode");
-        optgroup->append_single_option_line("dithering_local_z_whole_objects");
-        optgroup->append_single_option_line("dithering_local_z_direct_multicolor");
-        optgroup->append_single_option_line("dithering_step_painted_zones_only");
+        // SnapOrka: the Mixed Filaments optgroup moved to the Multimaterial page (sits with
+        // the rest of the multimaterial settings, gated by the master enable_mixed_filaments
+        // toggle). Originally lived here on the Others page.
 
         optgroup = page->new_optgroup(L("Fuzzy Skin"), L"fuzzy_skin");
         optgroup->append_single_option_line("fuzzy_skin", "others_settings_fuzzy_skin");
@@ -2745,6 +2774,21 @@ void TabPrint::toggle_options()
     }
 
     m_config_manipulation.toggle_print_fff_options(m_config, m_type < Preset::TYPE_COUNT);
+
+    // SnapOrka: master toggle greys-out every dependent mixed-filament option when off.
+    // Keeps stored values intact (consultative gate, like enable_prime_tower).
+    {
+        const bool mixed_on = m_config->opt_bool("enable_mixed_filaments");
+        for (const std::string &k : {
+                 "mixed_filament_height_lower_bound", "mixed_filament_height_upper_bound",
+                 "mixed_filament_advanced_dithering", "mixed_filament_component_bias_enabled",
+                 "mixed_filament_surface_indentation", "mixed_filament_region_collapse",
+                 "dithering_z_step_size", "dithering_local_z_mode",
+                 "dithering_local_z_whole_objects", "dithering_local_z_direct_multicolor",
+                 "dithering_step_painted_zones_only"}) {
+            toggle_option(k, mixed_on);
+        }
+    }
 
     Field *field = m_active_page->get_field("support_style");
     auto   support_type = m_config->opt_enum<SupportType>("support_type");

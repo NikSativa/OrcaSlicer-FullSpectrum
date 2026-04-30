@@ -3568,6 +3568,9 @@ void PresetBundle::update_multi_material_filament_presets(size_t to_delete_filam
             this->mixed_filaments.clear_custom_entries();
             this->mixed_filaments.load_custom_entries(get_mixed_string("mixed_filament_definitions"), color_opt->values);
             this->mixed_filaments.apply_gradient_settings(gradient_mode, lower_bound, upper_bound, advanced_dithering);
+            // SnapOrka: master toggle controls whether the manager actually applies its rows
+            // at slice time. Mirror project_config -> manager so GUI path matches Print path.
+            this->mixed_filaments.set_active(this->project_config.opt_bool("enable_mixed_filaments"));
 
             const std::string serialized = this->mixed_filaments.serialize_custom_entries();
             set_mixed_string("mixed_filament_definitions", serialized);

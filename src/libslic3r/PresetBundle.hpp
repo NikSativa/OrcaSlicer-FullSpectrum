@@ -268,6 +268,9 @@ public:
         m_last_filament_id_remap.clear();
         return out;
     }
+    // SnapOrka: write a precomputed remap directly (used by the master mixed-filament toggle's
+    // reversion path — virtual IDs map to their dominant physical ID, physicals map to identity).
+    void stash_filament_id_remap(std::vector<unsigned int> remap) { m_last_filament_id_remap = std::move(remap); }
 
     // Update the is_compatible flag of all print and filament presets depending on whether they are marked
     // as compatible with the currently selected printer (and print in case of filament presets).
