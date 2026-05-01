@@ -141,7 +141,7 @@
         "70%"
     ],
     "filament_retract_length_toolchange": [
-        "6"
+        "10"
     ],
     "filament_retract_lift_above": [
         "nil"
@@ -165,13 +165,13 @@
         "nil"
     ],
     "filament_retraction_length": [
-        "2.0"
+        "3.0"
     ],
     "filament_retraction_minimum_travel": [
         "nil"
     ],
     "filament_retraction_speed": [
-        "25"
+        "40"
     ],
     "filament_shrink": [
         "100%"
@@ -204,13 +204,13 @@
         "1"
     ],
     "filament_wipe_distance": [
-        "2"
+        "4"
     ],
     "filament_z_hop": [
-        "0.4"
+        "0.6"
     ],
     "filament_z_hop_types": [
-        "Normal Lift"
+        "Slope Lift"
     ],
     "full_fan_speed_layer": [
         "0"
@@ -231,10 +231,10 @@
         "-1"
     ],
     "nozzle_temperature": [
-        "230"
+        "220"
     ],
     "nozzle_temperature_initial_layer": [
-        "235"
+        "225"
     ],
     "nozzle_temperature_range_high": [
         "240"
