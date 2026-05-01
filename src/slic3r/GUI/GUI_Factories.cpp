@@ -1419,6 +1419,7 @@ void MenuFactory::create_part_menu()
     append_menu_item_reload_from_disk(menu);
     append_menu_item_export_stl(menu);
     append_menu_item_fix_through_netfabb(menu);
+    append_menu_item_align_distribute(menu);  // SnapOrka: parity with BambuStudio's m_part_menu
     append_menu_items_mirror(menu);
     append_menu_item_merge_parts_to_single_part(menu);
 
@@ -1444,6 +1445,7 @@ void MenuFactory::create_text_part_menu()
     append_menu_item_delete(menu);
     append_menu_item_fix_through_netfabb(menu);
     append_menu_item_simplify(menu);
+    append_menu_item_align_distribute(menu);  // SnapOrka: parity with BambuStudio's m_text_part_menu
     append_menu_items_mirror(menu);
     menu->AppendSeparator();
     append_menu_item_per_object_settings(menu);
@@ -1763,6 +1765,7 @@ wxMenu* MenuFactory::multi_selection_menu()
             index++;
         }
         append_menu_item_center(menu);
+        append_menu_item_align_distribute(menu);  // SnapOrka: visible on multi-instance right-click
         append_menu_item_drop(menu);
         append_menu_item_fix_through_netfabb(menu);
         //append_menu_item_simplify(menu);
@@ -1780,6 +1783,7 @@ wxMenu* MenuFactory::multi_selection_menu()
     }
     else {
         append_menu_item_center(menu);
+        append_menu_item_align_distribute(menu);  // SnapOrka: visible on multi-volume right-click
         append_menu_item_drop(menu);
         append_menu_item_fix_through_netfabb(menu);
         //append_menu_item_simplify(menu);
