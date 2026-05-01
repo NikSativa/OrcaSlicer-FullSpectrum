@@ -278,33 +278,6 @@ bool GLGizmosManager::init_icon_textures()
     else
         return false;
 
-    // SnapOrka: Align/Distribute icons ported from BambuStudio for ObjectManipulation panel.
-    // Each icon has a light-mode and dark-mode variant; both are loaded at startup so the
-    // panel can pick by m_is_dark_mode flag at render time.
-    auto load_align = [&](const std::string &name, int ic_light, int ic_dark) -> bool {
-        if (IMTexture::load_from_svg_file(Slic3r::resources_dir() + "/images/" + name + ".svg", 64, 64, texture_id))
-            icon_list.insert(std::make_pair(ic_light, texture_id));
-        else
-            return false;
-        if (IMTexture::load_from_svg_file(Slic3r::resources_dir() + "/images/" + name + "_dark.svg", 64, 64, texture_id))
-            icon_list.insert(std::make_pair(ic_dark, texture_id));
-        else
-            return false;
-        return true;
-    };
-    if (!load_align("align_x_min",    IC_ALIGN_X_MIN,    IC_ALIGN_X_MIN_DARK))    return false;
-    if (!load_align("align_x_center", IC_ALIGN_X_CENTER, IC_ALIGN_X_CENTER_DARK)) return false;
-    if (!load_align("align_x_max",    IC_ALIGN_X_MAX,    IC_ALIGN_X_MAX_DARK))    return false;
-    if (!load_align("align_y_min",    IC_ALIGN_Y_MIN,    IC_ALIGN_Y_MIN_DARK))    return false;
-    if (!load_align("align_y_center", IC_ALIGN_Y_CENTER, IC_ALIGN_Y_CENTER_DARK)) return false;
-    if (!load_align("align_y_max",    IC_ALIGN_Y_MAX,    IC_ALIGN_Y_MAX_DARK))    return false;
-    if (!load_align("align_z_min",    IC_ALIGN_Z_MIN,    IC_ALIGN_Z_MIN_DARK))    return false;
-    if (!load_align("align_z_center", IC_ALIGN_Z_CENTER, IC_ALIGN_Z_CENTER_DARK)) return false;
-    if (!load_align("align_z_max",    IC_ALIGN_Z_MAX,    IC_ALIGN_Z_MAX_DARK))    return false;
-    if (!load_align("distribute_x",   IC_DISTRIBUTE_X,   IC_DISTRIBUTE_X_DARK))   return false;
-    if (!load_align("distribute_y",   IC_DISTRIBUTE_Y,   IC_DISTRIBUTE_Y_DARK))   return false;
-    if (!load_align("distribute_z",   IC_DISTRIBUTE_Z,   IC_DISTRIBUTE_Z_DARK))   return false;
-
     return true;
 }
 
