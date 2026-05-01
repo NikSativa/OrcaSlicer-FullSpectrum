@@ -139,6 +139,10 @@
       "sub_path": "process/0.20 Standard @Snapmaker U1 (0.4 nozzle).json"
     },
     {
+      "name": "0.20 TPU @Snapmaker U1 (0.4 nozzle)",
+      "sub_path": "process/0.20 TPU @Snapmaker U1 (0.4 nozzle).json"
+    },
+    {
       "name": "0.08 Extra Fine @Snapmaker U1 (0.4 nozzle)",
       "sub_path": "process/0.08 Extra Fine @Snapmaker U1 (0.4 nozzle).json"
     },
@@ -1322,6 +1326,22 @@
     {
       "name": "Snapmaker TPU 95A @U1 base",
       "sub_path":"filament/Snapmaker TPU 95A @U1 base.json"
+    },
+    {
+      "name": "Creality TPU CR @Snapmaker U1 base",
+      "sub_path": "filament/Creality TPU CR @Snapmaker U1 base.json"
+    },
+    {
+      "name": "Creality TPU CR @Snapmaker U1 (0.4 nozzle)",
+      "sub_path": "filament/Creality TPU CR @Snapmaker U1 (0.4 nozzle).json"
+    },
+    {
+      "name": "Creality TPU CR @Snapmaker U1 (0.6 nozzle)",
+      "sub_path": "filament/Creality TPU CR @Snapmaker U1 (0.6 nozzle).json"
+    },
+    {
+      "name": "Creality TPU CR @Snapmaker U1 (0.8 nozzle)",
+      "sub_path": "filament/Creality TPU CR @Snapmaker U1 (0.8 nozzle).json"
     },
 
     {
