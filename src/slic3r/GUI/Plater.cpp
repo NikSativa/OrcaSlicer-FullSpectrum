@@ -1413,11 +1413,6 @@ Sidebar::Sidebar(Plater *parent)
             }
         }
         wxGetApp().plater()->update();
-        // SwitchButton's own bitmap-refresh handler is bound in its ctor; our Bind runs
-        // first (LIFO) and would otherwise eat the event before update() runs, leaving the
-        // visual stuck on "off". Force the bitmap to track the new state explicitly.
-        mix_toggle->SetValue(new_val);
-        e.Skip();
     });
     p->m_btn_enable_mixed_filaments = mix_toggle;
     bSizer39->Add(mixing_label, 0, wxALIGN_CENTER_VERTICAL | wxLEFT, FromDIP(8));
