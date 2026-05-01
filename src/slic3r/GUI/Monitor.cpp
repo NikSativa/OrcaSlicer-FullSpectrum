@@ -454,6 +454,20 @@ bool MonitorPanel::Show(bool show)
             if (obj == nullptr) {
                 dev->load_last_machine();
                 obj = dev->get_selected_machine();
+                // SnapOrka: when there's exactly one configured printer (local or cloud)
+                // and no last-machine memory, auto-select it so the Device tab opens
+                // pointed at the only printer the user owns.
+                if (obj == nullptr) {
+                    std::set<std::string> all_ids;
+                    for (const auto &kv : dev->get_my_machine_list())     all_ids.insert(kv.first);
+                    for (const auto &kv : dev->get_local_machine_list())  all_ids.insert(kv.first);
+                    if (all_ids.size() == 1) {
+                        wxCommandEvent *evt = new wxCommandEvent(wxEVT_COMMAND_CHOICE_SELECTED);
+                        evt->SetString(*all_ids.begin());
+                        wxQueueEvent(this, evt);
+                        obj = nullptr; // on_select_printer handles the rest async
+                    }
+                }
                 if (obj)
                     GUI::wxGetApp().sidebar().load_ams_list(obj->dev_id, obj);
             } else {
