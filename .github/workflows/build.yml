@@ -8,6 +8,7 @@ name: Build SnapOrka
 on:
   push:
     branches: [main]
+    tags: ['v*']
     paths:
       - 'SnapOrka/deps/**'
       - 'SnapOrka/src/**'
@@ -101,3 +102,32 @@ jobs:
           name: SnapOrka-Linux-x86_64
           path: SnapOrka/build/SnapOrka_Linux_*.AppImage
           if-no-files-found: warn
+
+  release:
+    name: Publish GitHub Release
+    needs: [macos-arm64, linux-x86_64]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: SnapOrka-macOS-arm64
+          path: dist/macos
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: SnapOrka-Linux-x86_64
+          path: dist/linux
+      - name: List collected artifacts
+        run: find dist -type f -ls
+      - name: Create release with assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/macos/SnapOrka-macOS-arm64.zip
+            dist/linux/SnapOrka_Linux_*.AppImage
+          generate_release_notes: true
+          fail_on_unmatched_files: false
