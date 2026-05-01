@@ -928,6 +928,58 @@ void GizmoObjectManipulation::do_render_move_window(ImGuiWrapper *imgui_wrapper,
         }
     }
     if (!focued_on_text) m_glcanvas.handle_sidebar_focus_event("", false);
+
+    // SnapOrka: Align/Distribute icon row — ported from BambuStudio's GizmoObjectManipulation.
+    // Renders 12 ImageButton icons (3 align + 1 distribute, ×3 axes) when 2+ objects selected
+    // in World coordinates mode. Each icon calls the matching plater()->{align,distribute}_selection_*
+    // method (already implemented in Plater).
+    {
+        const Selection &sel             = m_glcanvas.get_selection();
+        const size_t     selection_count = sel.get_volume_idxs().size();
+        if (selection_count >= 2 && m_coordinates_type == ECoordinatesType::World) {
+            ImGui::Spacing();
+            ImGui::Separator();
+            imgui_wrapper->text(_L("Align") + "/" + _L("Distribute"));
+
+            const bool is_dark   = wxGetApp().dark_mode();
+            auto      &gm        = m_glcanvas.get_gizmos_manager();
+            const float icon_size = ImGui::GetFrameHeight() * 1.2f;
+
+            auto draw_btn = [&](GLGizmosManager::MENU_ICON_NAME light, GLGizmosManager::MENU_ICON_NAME dark,
+                                const wxString &tip, void (Plater::*action)()) {
+                ImTextureID tex = gm.get_icon_texture_id(is_dark ? dark : light);
+                if (tex && ImGui::ImageButton3(tex, tex, ImVec2(icon_size, icon_size)))
+                    (wxGetApp().plater()->*action)();
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip("%s", tip.ToUTF8().data());
+            };
+
+            draw_btn(GLGizmosManager::IC_ALIGN_X_MIN,    GLGizmosManager::IC_ALIGN_X_MIN_DARK,    _L("Align left") + " (-X)",           &Plater::align_selection_x_min);
+            ImGui::SameLine();
+            draw_btn(GLGizmosManager::IC_ALIGN_X_CENTER, GLGizmosManager::IC_ALIGN_X_CENTER_DARK, _L("Align left-right center") + " (X)", &Plater::align_selection_x_center);
+            ImGui::SameLine();
+            draw_btn(GLGizmosManager::IC_ALIGN_X_MAX,    GLGizmosManager::IC_ALIGN_X_MAX_DARK,    _L("Align right") + " (+X)",          &Plater::align_selection_x_max);
+            ImGui::SameLine();
+            draw_btn(GLGizmosManager::IC_DISTRIBUTE_X,   GLGizmosManager::IC_DISTRIBUTE_X_DARK,   _L("Distribute left-right") + " (X)", &Plater::distribute_selection_x);
+
+            draw_btn(GLGizmosManager::IC_ALIGN_Y_MIN,    GLGizmosManager::IC_ALIGN_Y_MIN_DARK,    _L("Align front") + " (-Y)",          &Plater::align_selection_y_min);
+            ImGui::SameLine();
+            draw_btn(GLGizmosManager::IC_ALIGN_Y_CENTER, GLGizmosManager::IC_ALIGN_Y_CENTER_DARK, _L("Align front-back center") + " (Y)", &Plater::align_selection_y_center);
+            ImGui::SameLine();
+            draw_btn(GLGizmosManager::IC_ALIGN_Y_MAX,    GLGizmosManager::IC_ALIGN_Y_MAX_DARK,    _L("Align back") + " (+Y)",           &Plater::align_selection_y_max);
+            ImGui::SameLine();
+            draw_btn(GLGizmosManager::IC_DISTRIBUTE_Y,   GLGizmosManager::IC_DISTRIBUTE_Y_DARK,   _L("Distribute front-back") + " (Y)", &Plater::distribute_selection_y);
+
+            draw_btn(GLGizmosManager::IC_ALIGN_Z_MIN,    GLGizmosManager::IC_ALIGN_Z_MIN_DARK,    _L("Align bottom") + " (-Z)",          &Plater::align_selection_z_min);
+            ImGui::SameLine();
+            draw_btn(GLGizmosManager::IC_ALIGN_Z_CENTER, GLGizmosManager::IC_ALIGN_Z_CENTER_DARK, _L("Align top-bottom center") + " (Z)", &Plater::align_selection_z_center);
+            ImGui::SameLine();
+            draw_btn(GLGizmosManager::IC_ALIGN_Z_MAX,    GLGizmosManager::IC_ALIGN_Z_MAX_DARK,    _L("Align top") + " (+Z)",            &Plater::align_selection_z_max);
+            ImGui::SameLine();
+            draw_btn(GLGizmosManager::IC_DISTRIBUTE_Z,   GLGizmosManager::IC_DISTRIBUTE_Z_DARK,   _L("Distribute top-bottom") + " (Z)", &Plater::distribute_selection_z);
+        }
+    }
+
     float get_cur_y      = ImGui::GetContentRegionMax().y + ImGui::GetFrameHeight() + y;
     float tip_caption_max    = 0.f;
     float total_text_max = 0.f;
