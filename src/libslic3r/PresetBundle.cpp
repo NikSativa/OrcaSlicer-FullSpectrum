@@ -70,6 +70,7 @@ static std::vector<std::string> s_project_options {
     "curr_bed_type",
     "flush_multiplier",
     // Mixed filament / local-Z settings
+    "enable_mixed_filaments",
     "mixed_filament_gradient_mode",
     "mixed_filament_height_lower_bound",
     "mixed_filament_height_upper_bound",
@@ -3570,7 +3571,10 @@ void PresetBundle::update_multi_material_filament_presets(size_t to_delete_filam
             this->mixed_filaments.apply_gradient_settings(gradient_mode, lower_bound, upper_bound, advanced_dithering);
             // SnapOrka: master toggle controls whether the manager actually applies its rows
             // at slice time. Mirror project_config -> manager so GUI path matches Print path.
-            this->mixed_filaments.set_active(this->project_config.opt_bool("enable_mixed_filaments"));
+            {
+                const auto *master = this->project_config.option<ConfigOptionBool>("enable_mixed_filaments");
+                this->mixed_filaments.set_active(master && master->value);
+            }
 
             const std::string serialized = this->mixed_filaments.serialize_custom_entries();
             set_mixed_string("mixed_filament_definitions", serialized);

@@ -2778,7 +2778,8 @@ void TabPrint::toggle_options()
     // SnapOrka: master toggle greys-out every dependent mixed-filament option when off.
     // Keeps stored values intact (consultative gate, like enable_prime_tower).
     {
-        const bool mixed_on = m_config->opt_bool("enable_mixed_filaments");
+        const auto *mixed_opt = m_config->option<ConfigOptionBool>("enable_mixed_filaments");
+        const bool mixed_on = mixed_opt && mixed_opt->value;
         for (const std::string &k : {
                  "mixed_filament_height_lower_bound", "mixed_filament_height_upper_bound",
                  "mixed_filament_advanced_dithering", "mixed_filament_component_bias_enabled",

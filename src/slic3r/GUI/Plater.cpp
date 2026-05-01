@@ -6973,7 +6973,8 @@ void Sidebar::update_mixed_filament_panel(bool sync_manager)
     // mixed filaments are disabled. Stored slots remain (consultative gate).
     {
         auto *bundle = wxGetApp().preset_bundle;
-        const bool master_on = bundle && bundle->project_config.opt_bool("enable_mixed_filaments");
+        const ConfigOptionBool *master_opt = bundle ? bundle->project_config.option<ConfigOptionBool>("enable_mixed_filaments") : nullptr;
+        const bool master_on = master_opt && master_opt->value;
         if (!master_on) {
             p->m_panel_mixed_filaments_title->Hide();
             p->m_panel_mixed_filaments_content->Hide();
