@@ -269,7 +269,10 @@ wxWebView* WebView::CreateWebView(wxWindow * parent, wxString const & url)
     auto webView = wxWebView::New();
 #endif
     if (webView) {
-        webView->SetBackgroundColour(StateColor::darkModeColorFor(*wxWHITE));
+        // SnapOrka: force WebView host bg to white regardless of system dark mode —
+        // Flutter pages always render light theme (see get_international_url) so a dark
+        // host bg leaks through during composition on macOS 26 dark mode.
+        webView->SetBackgroundColour(*wxWHITE);
 #ifdef __WIN32__
         webView->SetUserAgent(wxString::Format("SM-Slicer/v%s (%s) Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
             "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36 Edg/107.0.1418.52", SLIC3R_VERSION, 
@@ -293,8 +296,8 @@ wxWebView* WebView::CreateWebView(wxWindow * parent, wxString const & url)
         webView->RegisterHandler(wxSharedPtr<wxWebViewHandler>(new wxWebViewFSHandler("memory")));
 #endif
         webView->Create(parent, wxID_ANY, url2, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE);
-        webView->SetUserAgent(wxString::Format("SM-Slicer/v%s (%s) Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko)", SLIC3R_VERSION,
-                                               Slic3r::GUI::wxGetApp().dark_mode() ? "dark" : "light"));
+        // SnapOrka: User-Agent always reports "light" to match the forced light Flutter pages
+        webView->SetUserAgent(wxString::Format("SM-Slicer/v%s (light) Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko)", SLIC3R_VERSION));
 #endif
 #ifdef __WXMAC__
         WKWebView * wkWebView = (WKWebView *) webView->GetNativeBackend();

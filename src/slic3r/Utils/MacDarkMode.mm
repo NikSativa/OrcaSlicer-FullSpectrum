@@ -96,7 +96,15 @@ void WKWebView_evaluateJavaScript(void * web, wxString const & script, void (*ca
 void WKWebView_setTransparentBackground(void * web)
 {
     WKWebView * webView = (WKWebView*)web;
-    [webView layer].backgroundColor = [NSColor clearColor].CGColor;
+    // SnapOrka: on macOS 26 dark mode WKWebView fails to composite Flutter content —
+    // entire WebView shows pure black regardless of drawsBackground / layer settings.
+    // Force the embedded WKWebView's appearance to Light + force layer.backgroundColor
+    // to white so the layer draws something visible even when the system is in dark mode.
+    if (@available(macOS 10.14, *)) {
+        webView.appearance = [NSAppearance appearanceNamed:NSAppearanceNameAqua];
+    }
+    [webView.layer setBackgroundColor:[NSColor whiteColor].CGColor];
+    [webView setValue:@YES forKey:@"drawsBackground"];
     [webView registerForDraggedTypes: @[NSFilenamesPboardType]];
 }
 

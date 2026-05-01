@@ -4208,7 +4208,11 @@ wxString GUI_App::get_international_url(const wxString& origin_url) {
         region = "US";
     }
 
-    string dark_mode = wxGetApp().app_config->get("dark_color_mode");
+    // SnapOrka: WebView host (this URL goes to WKWebView Flutter pages) is forced to
+    // light mode regardless of system theme. macOS 26 has a WKWebView dark-mode
+    // compositor regression that renders Flutter tabs pure black when system is dark.
+    // Rest of the app (wxWidgets sidebars, dialogs, etc.) keeps its own dark/light theme.
+    const std::string dark_mode = "0";
 
     if (baseUrl.find("?") != std::string::npos) {
         return baseUrl + wxString::FromUTF8("&locale=") + lang + wxString::FromUTF8("-") + region +
