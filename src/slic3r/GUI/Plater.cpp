@@ -153,6 +153,7 @@
 #include "Widgets/RadioGroup.hpp"
 #include "Widgets/CheckBox.hpp"
 #include "Widgets/Button.hpp"
+#include "Widgets/SwitchButton.hpp"
 
 #include "GUI_ObjectTable.hpp"
 #include "libslic3r/Thread.hpp"
@@ -692,6 +693,7 @@ struct Sidebar::priv
     ScalableButton *  m_bpButton_del_filament;
     ScalableButton *  m_bpButton_ams_filament;
     ScalableButton *  m_bpButton_set_filament;
+    SwitchButton *    m_btn_enable_mixed_filaments = nullptr;  // SnapOrka: master mixed-filament toggle in filament header
     int                         m_menu_filament_id = -1;
     wxPanel* m_panel_filament_content;
     wxScrolledWindow* m_scrolledWindow_filament_content;
@@ -1439,6 +1441,56 @@ Sidebar::Sidebar(Plater *parent)
     p->m_bpButton_set_filament = set_btn;
 
     bSizer39->Add(set_btn, 0, wxALIGN_CENTER | wxLEFT, FromDIP(SidebarProps::IconSpacing()));
+    bSizer39->AddSpacer(FromDIP(SidebarProps::TitlebarMargin()));
+
+    // SnapOrka: master "Mix" toggle in the filament header — replaces the toggle that used
+    // to live on the Multimaterial → Mixed Filaments process tab. When ON, the sidebar
+    // mixed-filaments panel (Add Gradient / Pattern / Color + slot list) is revealed; when
+    // OFF the panel hides. Off by default; auto-flips ON when a 3MF with mixed slots is imported.
+    SwitchButton *mix_toggle = new SwitchButton(p->m_panel_filament_title);
+    mix_toggle->SetToolTip(_L("Enable mixed filaments — gradients, layer-cycle, dithering. Off by default."));
+    {
+        auto *bundle = wxGetApp().preset_bundle;
+        const auto *opt = bundle ? bundle->project_config.option<ConfigOptionBool>("enable_mixed_filaments") : nullptr;
+        mix_toggle->SetValue(opt && opt->value);
+    }
+    mix_toggle->Bind(wxEVT_TOGGLEBUTTON, [this, mix_toggle](wxCommandEvent &e) {
+        auto *bundle = wxGetApp().preset_bundle;
+        if (!bundle) { mix_toggle->SetValue(false); return; }
+        const bool new_val     = mix_toggle->GetValue();
+        const bool turning_off = !new_val;
+        const bool has_active  = bundle->mixed_filaments.enabled_count() > 0;
+
+        if (turning_off && has_active) {
+            MessageDialog dlg(wxGetApp().plater(),
+                _L("Disabling mixed filaments will remove all mixed and gradient slots from this project "
+                   "and revert painted regions to the dominant physical filament of each slot. Continue?"),
+                _L("Disable mixed filaments"), wxICON_WARNING | wxYES | wxNO);
+            if (dlg.ShowModal() != wxID_YES) {
+                mix_toggle->SetValue(true);
+                return;
+            }
+            wxGetApp().plater()->revert_mixed_filaments_to_dominant_physical();
+        }
+
+        bundle->project_config.set_key_value("enable_mixed_filaments", new ConfigOptionBool(new_val));
+        bundle->mixed_filaments.set_active(new_val);
+        update_mixed_filament_panel(true);
+
+        // Mirror into the print/process preset config so the value survives 3MF round-trip
+        // and the (now-hidden) Tab field stays consistent.
+        if (auto *tab = wxGetApp().get_tab(Preset::TYPE_PRINT)) {
+            if (auto *cfg = tab->get_config()) {
+                DynamicPrintConfig delta;
+                delta.set_key_value("enable_mixed_filaments", new ConfigOptionBool(new_val));
+                const_cast<DynamicPrintConfig *>(cfg)->apply_only(delta, {"enable_mixed_filaments"});
+                tab->update_dirty();
+            }
+        }
+        wxGetApp().plater()->update();
+    });
+    p->m_btn_enable_mixed_filaments = mix_toggle;
+    bSizer39->Add(mix_toggle, 0, wxALIGN_CENTER | wxLEFT, FromDIP(SidebarProps::IconSpacing()));
     bSizer39->AddSpacer(FromDIP(SidebarProps::TitlebarMargin()));
 
     // add filament content
@@ -6975,6 +7027,10 @@ void Sidebar::update_mixed_filament_panel(bool sync_manager)
         auto *bundle = wxGetApp().preset_bundle;
         const ConfigOptionBool *master_opt = bundle ? bundle->project_config.option<ConfigOptionBool>("enable_mixed_filaments") : nullptr;
         const bool master_on = master_opt && master_opt->value;
+        // Sync the filament-header toggle to the current project_config value so 3MF imports
+        // that auto-enable the master toggle (Plater.cpp:10593) flip the switch visually.
+        if (p->m_btn_enable_mixed_filaments && p->m_btn_enable_mixed_filaments->GetValue() != master_on)
+            p->m_btn_enable_mixed_filaments->SetValue(master_on);
         if (!master_on) {
             p->m_panel_mixed_filaments_title->Hide();
             p->m_panel_mixed_filaments_content->Hide();

@@ -2638,8 +2638,10 @@ void TabPrint::build()
 
         // SnapOrka: Mixed Filaments cluster — relocated from the Others page so the master
         // toggle and its dependent dithering options sit alongside the rest of multimaterial.
+        // SnapOrka: master "enable_mixed_filaments" toggle moved to the filament-panel header
+        // in the sidebar (see Plater.cpp). The dependent dithering options below stay here
+        // and grey out when the master is off.
         optgroup = page->new_optgroup(L("Mixed Filaments"));
-        optgroup->append_single_option_line("enable_mixed_filaments");
         optgroup->append_single_option_line("mixed_filament_height_lower_bound");
         optgroup->append_single_option_line("mixed_filament_height_upper_bound");
         optgroup->append_single_option_line("mixed_filament_advanced_dithering");
@@ -2778,7 +2780,11 @@ void TabPrint::toggle_options()
     // SnapOrka: master toggle greys-out every dependent mixed-filament option when off.
     // Keeps stored values intact (consultative gate, like enable_prime_tower).
     {
-        const auto *mixed_opt = m_config->option<ConfigOptionBool>("enable_mixed_filaments");
+        // Master toggle now lives in the filament-panel header → read from project_config.
+        auto *bundle = wxGetApp().preset_bundle;
+        const auto *mixed_opt = bundle
+            ? bundle->project_config.option<ConfigOptionBool>("enable_mixed_filaments")
+            : nullptr;
         const bool mixed_on = mixed_opt && mixed_opt->value;
         for (const std::string &k : {
                  "mixed_filament_height_lower_bound", "mixed_filament_height_upper_bound",
