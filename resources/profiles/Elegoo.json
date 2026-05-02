@@ -1257,6 +1257,10 @@
       "sub_path": "filament/Elegoo PLA Matte @Elegoo Giga.json"
     },
     {
+      "name": "Elegoo ABS @Snapmaker U1 base",
+      "sub_path": "filament/Elegoo ABS @Snapmaker U1 base.json"
+    },
+    {
       "name": "Elegoo ABS @Snapmaker U1 (0.4 nozzle)",
       "sub_path": "filament/Elegoo ABS @Snapmaker U1 (0.4 nozzle).json"
     },
@@ -1269,8 +1273,8 @@
       "sub_path": "filament/Elegoo ABS @Snapmaker U1 (0.8 nozzle).json"
     },
     {
-      "name": "Elegoo ABS @Snapmaker U1 base",
-      "sub_path": "filament/Elegoo ABS @Snapmaker U1 base.json"
+      "name": "Elegoo ASA @Snapmaker U1 base",
+      "sub_path": "filament/Elegoo ASA @Snapmaker U1 base.json"
     },
     {
       "name": "Elegoo ASA @Snapmaker U1 (0.4 nozzle)",
@@ -1285,8 +1289,8 @@
       "sub_path": "filament/Elegoo ASA @Snapmaker U1 (0.8 nozzle).json"
     },
     {
-      "name": "Elegoo ASA @Snapmaker U1 base",
-      "sub_path": "filament/Elegoo ASA @Snapmaker U1 base.json"
+      "name": "Elegoo PETG @Snapmaker U1 base",
+      "sub_path": "filament/Elegoo PETG @Snapmaker U1 base.json"
     },
     {
       "name": "Elegoo PETG @Snapmaker U1 (0.4 nozzle)",
@@ -1301,8 +1305,8 @@
       "sub_path": "filament/Elegoo PETG @Snapmaker U1 (0.8 nozzle).json"
     },
     {
-      "name": "Elegoo PETG @Snapmaker U1 base",
-      "sub_path": "filament/Elegoo PETG @Snapmaker U1 base.json"
+      "name": "Elegoo PETG PRO @Snapmaker U1 base",
+      "sub_path": "filament/Elegoo PETG PRO @Snapmaker U1 base.json"
     },
     {
       "name": "Elegoo PETG PRO @Snapmaker U1 (0.4 nozzle)",
@@ -1317,8 +1321,8 @@
       "sub_path": "filament/Elegoo PETG PRO @Snapmaker U1 (0.8 nozzle).json"
     },
     {
-      "name": "Elegoo PETG PRO @Snapmaker U1 base",
-      "sub_path": "filament/Elegoo PETG PRO @Snapmaker U1 base.json"
+      "name": "Elegoo PLA @Snapmaker U1 base",
+      "sub_path": "filament/Elegoo PLA @Snapmaker U1 base.json"
     },
     {
       "name": "Elegoo PLA @Snapmaker U1 (0.4 nozzle)",
@@ -1333,8 +1337,8 @@
       "sub_path": "filament/Elegoo PLA @Snapmaker U1 (0.8 nozzle).json"
     },
     {
-      "name": "Elegoo PLA @Snapmaker U1 base",
-      "sub_path": "filament/Elegoo PLA @Snapmaker U1 base.json"
+      "name": "Elegoo PLA Matte @Snapmaker U1 base",
+      "sub_path": "filament/Elegoo PLA Matte @Snapmaker U1 base.json"
     },
     {
       "name": "Elegoo PLA Matte @Snapmaker U1 (0.4 nozzle)",
@@ -1347,10 +1351,6 @@
     {
       "name": "Elegoo PLA Matte @Snapmaker U1 (0.8 nozzle)",
       "sub_path": "filament/Elegoo PLA Matte @Snapmaker U1 (0.8 nozzle).json"
-    },
-    {
-      "name": "Elegoo PLA Matte @Snapmaker U1 base",
-      "sub_path": "filament/Elegoo PLA Matte @Snapmaker U1 base.json"
     }
   ],
   "machine_list": [
