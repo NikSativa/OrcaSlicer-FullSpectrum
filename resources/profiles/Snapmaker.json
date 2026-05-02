@@ -1332,6 +1332,22 @@
       "sub_path": "filament/Creality TPU CR @Snapmaker U1 base.json"
     },
     {
+      "name": "Elegoo PETG @Snapmaker U1 base",
+      "sub_path": "filament/Elegoo PETG @Snapmaker U1 base.json"
+    },
+    {
+      "name": "Elegoo PETG @Snapmaker U1 (0.4 nozzle)",
+      "sub_path": "filament/Elegoo PETG @Snapmaker U1 (0.4 nozzle).json"
+    },
+    {
+      "name": "Elegoo PETG @Snapmaker U1 (0.6 nozzle)",
+      "sub_path": "filament/Elegoo PETG @Snapmaker U1 (0.6 nozzle).json"
+    },
+    {
+      "name": "Elegoo PETG @Snapmaker U1 (0.8 nozzle)",
+      "sub_path": "filament/Elegoo PETG @Snapmaker U1 (0.8 nozzle).json"
+    },
+    {
       "name": "Creality TPU CR @Snapmaker U1 (0.4 nozzle)",
       "sub_path": "filament/Creality TPU CR @Snapmaker U1 (0.4 nozzle).json"
     },
