@@ -1129,6 +1129,11 @@ void MainFrame::init_tabpanel() {
 
     if (wxGetApp().is_editor()) {
         m_webview         = new WebViewPanel(m_tabpanel);
+#ifdef __APPLE__
+        // SnapOrka: macOS 26 WKWebView dark-mode regression — force Aqua appearance on
+        // Home tab so Flutter content composites correctly when system is in dark mode.
+        Slic3r::GUI::force_light_appearance(m_webview->GetHandle());
+#endif
         Bind(EVT_LOAD_URL, [this](wxCommandEvent &evt) {
             wxString url = evt.GetString();
             select_tab(MainFrame::tpHome);
@@ -1150,8 +1155,16 @@ void MainFrame::init_tabpanel() {
     m_monitor = new MonitorPanel(m_tabpanel, wxID_ANY, wxDefaultPosition, wxDefaultSize);
     m_monitor->SetBackgroundColour(*wxWHITE);
     m_tabpanel->AddPage(m_monitor, _L("Device"), std::string("tab_monitor_active"), std::string("tab_monitor_active"), false);
+#ifdef __APPLE__
+    // SnapOrka: macOS 26 WKWebView dark-mode regression — force Aqua appearance on the
+    // Device tab so any embedded WKWebView (StatusPanel camera, etc.) composites correctly.
+    Slic3r::GUI::force_light_appearance(m_monitor->GetHandle());
+#endif
 
     m_printer_view = new PrinterWebView(m_tabpanel);
+#ifdef __APPLE__
+    Slic3r::GUI::force_light_appearance(m_printer_view->GetHandle());
+#endif
     Bind(EVT_LOAD_PRINTER_URL, [this](LoadPrinterViewEvent &evt) {
         wxString url = evt.GetString();
         wxString key = evt.GetAPIkey();

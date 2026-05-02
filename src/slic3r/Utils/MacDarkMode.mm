@@ -108,6 +108,15 @@ void WKWebView_setTransparentBackground(void * web)
     [webView registerForDraggedTypes: @[NSFilenamesPboardType]];
 }
 
+void force_light_appearance(void * nsViewPtr)
+{
+    if (!nsViewPtr) return;
+    NSView * view = (NSView *) nsViewPtr;
+    if (@available(macOS 10.14, *)) {
+        view.appearance = [NSAppearance appearanceNamed:NSAppearanceNameAqua];
+    }
+}
+
 void openFolderForFile(wxString const & file)
 {
     NSArray *fileURLs = [NSArray arrayWithObjects:wxCFStringRef(file).AsNSString(), /* ... */ nil];
