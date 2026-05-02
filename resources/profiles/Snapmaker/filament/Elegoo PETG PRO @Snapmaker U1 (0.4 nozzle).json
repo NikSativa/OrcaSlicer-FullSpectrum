@@ -1,18 +1,18 @@
 {
     "type": "filament",
-    "name": "Elegoo PETG @Snapmaker U1 (0.4 nozzle)",
-    "inherits": "Elegoo PETG @Snapmaker U1 base",
+    "name": "Elegoo PETG PRO @Snapmaker U1 (0.4 nozzle)",
+    "inherits": "Elegoo PETG PRO @Snapmaker U1 base",
     "from": "system",
-    "setting_id": "GFSE_PETG_04",
+    "setting_id": "GFSE_EPETGPRO_04",
     "instantiation": "true",
     "filament_settings_id": [
-        "Elegoo PETG @Snapmaker U1 (0.4 nozzle)"
+        "Elegoo PETG PRO @Snapmaker U1 (0.4 nozzle)"
     ],
     "compatible_printers": [
         "Snapmaker U1 (0.4 nozzle)"
     ],
     "filament_max_volumetric_speed": [
-        "8"
+        "10"
     ],
     "filament_vendor": [
         "Elegoo"
