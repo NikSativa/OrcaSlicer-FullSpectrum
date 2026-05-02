@@ -7151,6 +7151,15 @@ void PrintConfigDef::init_sla_params()
 
 void PrintConfigDef::handle_legacy(t_config_option_key &opt_key, std::string &value)
 {
+    // SnapOrka: legacy 3MF/preset files used "-1" as a sentinel for "use default" on
+    // several non-negative numeric fields. Newer schema enforces min=0, so loading
+    // such files emits "not in range [0,...]" warnings. Migrate -1 → schema default
+    // (or 0 for fields whose default we don't override here) so old projects load clean.
+    if (value == "-1") {
+        if (opt_key == "prime_tower_brim_width")     value = "3";   // schema default
+        else if (opt_key == "raft_first_layer_expansion") value = "2"; // schema default (BBS-tuned)
+        else if (opt_key == "tree_support_wall_count")    value = "0"; // 0 = auto
+    }
     //BBS: handle legacy options
     if (opt_key == "enable_wipe_tower") {
         opt_key = "enable_prime_tower";
