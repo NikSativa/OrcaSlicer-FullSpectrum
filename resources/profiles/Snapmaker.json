@@ -82,7 +82,6 @@
     }
   ],
   "process_list": [
-    
     {
       "name": "fdm_process_common",
       "sub_path": "process/fdm_process_common.json"
@@ -99,8 +98,6 @@
       "name": "fdm_process_U1",
       "sub_path": "process/fdm_process_U1.json"
     },
-
-
     {
       "name": "fdm_process_U1_common",
       "sub_path": "process/fdm_process_U1_common.json"
@@ -129,11 +126,6 @@
       "name": "fdm_process_U1_0.28",
       "sub_path": "process/fdm_process_U1_0.28.json"
     },
-
-
-
-
-    
     {
       "name": "0.20 Standard @Snapmaker U1 (0.4 nozzle)",
       "sub_path": "process/0.20 Standard @Snapmaker U1 (0.4 nozzle).json"
@@ -178,14 +170,6 @@
       "name": "0.28 Extra Draft @Snapmaker U1 (0.4 nozzle)",
       "sub_path": "process/0.28 Extra Draft @Snapmaker U1 (0.4 nozzle).json"
     },
-
-    
-
-
-
-
-
-
     {
       "name": "0.06 Standard @Snapmaker (0.2 nozzle)",
       "sub_path": "process/0.06 Standard @Snapmaker (0.2 nozzle).json"
@@ -470,7 +454,7 @@
     },
     {
       "name": "fdm_filament_bvoh_generic",
-      "sub_path":"filament/fdm_filament_bvoh_generic.json"
+      "sub_path": "filament/fdm_filament_bvoh_generic.json"
     },
     {
       "name": "fdm_filament_abs_generic",
@@ -648,31 +632,6 @@
       "name": "Snapmaker PETG HF",
       "sub_path": "filament/Snapmaker PETG HF.json"
     },
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-
-
     {
       "name": "fdm_filament_common",
       "sub_path": "filament/fdm_filament_common.json"
@@ -1237,12 +1196,6 @@
       "name": "Snapmaker Breakaway Support @J1",
       "sub_path": "filament/Snapmaker Breakaway Support @J1.json"
     },
-
-
-
-    
-    
-    
     {
       "name": "Snapmaker PLA @U1 base",
       "sub_path": "filament/Snapmaker PLA @U1 base.json"
@@ -1307,7 +1260,7 @@
       "name": "Snapmaker PLA Silk @U1 base",
       "sub_path": "filament/Snapmaker PLA Silk @U1 base.json"
     },
-	{
+    {
       "name": "Snapmaker TPU 95A HF @U1",
       "sub_path": "filament/Snapmaker TPU 95A HF @U1.json"
     },
@@ -1325,107 +1278,11 @@
     },
     {
       "name": "Snapmaker TPU 95A @U1 base",
-      "sub_path":"filament/Snapmaker TPU 95A @U1 base.json"
+      "sub_path": "filament/Snapmaker TPU 95A @U1 base.json"
     },
     {
       "name": "Creality TPU CR @Snapmaker U1 base",
       "sub_path": "filament/Creality TPU CR @Snapmaker U1 base.json"
-    },
-    {
-      "name": "Elegoo PETG @Snapmaker U1 base",
-      "sub_path": "filament/Elegoo PETG @Snapmaker U1 base.json"
-    },
-    {
-      "name": "Elegoo PETG @Snapmaker U1 (0.4 nozzle)",
-      "sub_path": "filament/Elegoo PETG @Snapmaker U1 (0.4 nozzle).json"
-    },
-    {
-      "name": "Elegoo PETG @Snapmaker U1 (0.6 nozzle)",
-      "sub_path": "filament/Elegoo PETG @Snapmaker U1 (0.6 nozzle).json"
-    },
-    {
-      "name": "Elegoo PETG @Snapmaker U1 (0.8 nozzle)",
-      "sub_path": "filament/Elegoo PETG @Snapmaker U1 (0.8 nozzle).json"
-    },
-    {
-      "name": "Elegoo PLA @Snapmaker U1 base",
-      "sub_path": "filament/Elegoo PLA @Snapmaker U1 base.json"
-    },
-    {
-      "name": "Elegoo PLA @Snapmaker U1 (0.4 nozzle)",
-      "sub_path": "filament/Elegoo PLA @Snapmaker U1 (0.4 nozzle).json"
-    },
-    {
-      "name": "Elegoo PLA @Snapmaker U1 (0.6 nozzle)",
-      "sub_path": "filament/Elegoo PLA @Snapmaker U1 (0.6 nozzle).json"
-    },
-    {
-      "name": "Elegoo PLA @Snapmaker U1 (0.8 nozzle)",
-      "sub_path": "filament/Elegoo PLA @Snapmaker U1 (0.8 nozzle).json"
-    },
-    {
-      "name": "Elegoo PLA Matte @Snapmaker U1 base",
-      "sub_path": "filament/Elegoo PLA Matte @Snapmaker U1 base.json"
-    },
-    {
-      "name": "Elegoo PLA Matte @Snapmaker U1 (0.4 nozzle)",
-      "sub_path": "filament/Elegoo PLA Matte @Snapmaker U1 (0.4 nozzle).json"
-    },
-    {
-      "name": "Elegoo PLA Matte @Snapmaker U1 (0.6 nozzle)",
-      "sub_path": "filament/Elegoo PLA Matte @Snapmaker U1 (0.6 nozzle).json"
-    },
-    {
-      "name": "Elegoo PLA Matte @Snapmaker U1 (0.8 nozzle)",
-      "sub_path": "filament/Elegoo PLA Matte @Snapmaker U1 (0.8 nozzle).json"
-    },
-    {
-      "name": "Elegoo ABS @Snapmaker U1 base",
-      "sub_path": "filament/Elegoo ABS @Snapmaker U1 base.json"
-    },
-    {
-      "name": "Elegoo ABS @Snapmaker U1 (0.4 nozzle)",
-      "sub_path": "filament/Elegoo ABS @Snapmaker U1 (0.4 nozzle).json"
-    },
-    {
-      "name": "Elegoo ABS @Snapmaker U1 (0.6 nozzle)",
-      "sub_path": "filament/Elegoo ABS @Snapmaker U1 (0.6 nozzle).json"
-    },
-    {
-      "name": "Elegoo ABS @Snapmaker U1 (0.8 nozzle)",
-      "sub_path": "filament/Elegoo ABS @Snapmaker U1 (0.8 nozzle).json"
-    },
-    {
-      "name": "Elegoo ASA @Snapmaker U1 base",
-      "sub_path": "filament/Elegoo ASA @Snapmaker U1 base.json"
-    },
-    {
-      "name": "Elegoo ASA @Snapmaker U1 (0.4 nozzle)",
-      "sub_path": "filament/Elegoo ASA @Snapmaker U1 (0.4 nozzle).json"
-    },
-    {
-      "name": "Elegoo ASA @Snapmaker U1 (0.6 nozzle)",
-      "sub_path": "filament/Elegoo ASA @Snapmaker U1 (0.6 nozzle).json"
-    },
-    {
-      "name": "Elegoo ASA @Snapmaker U1 (0.8 nozzle)",
-      "sub_path": "filament/Elegoo ASA @Snapmaker U1 (0.8 nozzle).json"
-    },
-    {
-      "name": "Elegoo PETG PRO @Snapmaker U1 base",
-      "sub_path": "filament/Elegoo PETG PRO @Snapmaker U1 base.json"
-    },
-    {
-      "name": "Elegoo PETG PRO @Snapmaker U1 (0.4 nozzle)",
-      "sub_path": "filament/Elegoo PETG PRO @Snapmaker U1 (0.4 nozzle).json"
-    },
-    {
-      "name": "Elegoo PETG PRO @Snapmaker U1 (0.6 nozzle)",
-      "sub_path": "filament/Elegoo PETG PRO @Snapmaker U1 (0.6 nozzle).json"
-    },
-    {
-      "name": "Elegoo PETG PRO @Snapmaker U1 (0.8 nozzle)",
-      "sub_path": "filament/Elegoo PETG PRO @Snapmaker U1 (0.8 nozzle).json"
     },
     {
       "name": "Creality TPU CR @Snapmaker U1 (0.4 nozzle)",
@@ -1439,7 +1296,6 @@
       "name": "Creality TPU CR @Snapmaker U1 (0.8 nozzle)",
       "sub_path": "filament/Creality TPU CR @Snapmaker U1 (0.8 nozzle).json"
     },
-
     {
       "name": "fdm_filament_common_poly",
       "sub_path": "filament/fdm_filament_common_poly.json"
@@ -1856,4 +1712,3 @@
     }
   ]
 }
-
