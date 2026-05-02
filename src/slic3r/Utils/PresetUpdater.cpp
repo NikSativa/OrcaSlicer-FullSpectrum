@@ -1312,6 +1312,30 @@ void PresetUpdater::priv::check_installed_vendor_profiles() const
 
     AppConfig *app_config = GUI::wxGetApp().app_config;
     const auto enabled_vendors = app_config->vendors();
+    // SnapOrka: also auto-install vendor bundles that contain user-enabled filaments,
+    // even if the user has no printer from that vendor. Otherwise filaments selected
+    // in the System Filaments dialog from a non-printer-vendor bundle (e.g. Elegoo
+    // PETG on Snapmaker U1) never reach PresetBundle and stay invisible in dropdowns.
+    const auto enabled_filaments = app_config->has_section(AppConfig::SECTION_FILAMENTS)
+        ? app_config->get_section(AppConfig::SECTION_FILAMENTS)
+        : std::map<std::string, std::string>();
+    auto bundle_has_enabled_filament = [&enabled_filaments](const std::string& bundle_path) -> bool {
+        try {
+            boost::nowide::ifstream ifs(bundle_path);
+            json bundle_json;
+            ifs >> bundle_json;
+            if (bundle_json.contains("filament_list") && bundle_json["filament_list"].is_array()) {
+                for (const auto& fil : bundle_json["filament_list"]) {
+                    if (fil.contains("name")) {
+                        std::string fil_name = fil["name"].get<std::string>();
+                        if (enabled_filaments.find(fil_name) != enabled_filaments.end())
+                            return true;
+                    }
+                }
+            }
+        } catch (...) {}
+        return false;
+    };
 
     std::set<std::string> bundles;
     // Orca: always install filament library
@@ -1327,7 +1351,8 @@ void PresetUpdater::priv::check_installed_vendor_profiles() const
             if (bundles.find(vendor_name) != bundles.end())continue;
 
             const auto is_vendor_enabled = (vendor_name == PresetBundle::SM_BUNDLE) // always update configs from resource to vendor for ORCA_DEFAULT_BUNDLE
-                                           || (enabled_vendors.find(vendor_name) != enabled_vendors.end());
+                                           || (enabled_vendors.find(vendor_name) != enabled_vendors.end())
+                                           || bundle_has_enabled_filament(file_path);  // SnapOrka: filament-only enabling
             if (enabled_config_update) {
                 if ( fs::exists(path_in_vendor)) {
                     if (is_vendor_enabled) {

@@ -7160,6 +7160,17 @@ void PrintConfigDef::handle_legacy(t_config_option_key &opt_key, std::string &va
         else if (opt_key == "raft_first_layer_expansion") value = "2"; // schema default (BBS-tuned)
         else if (opt_key == "tree_support_wall_count")    value = "0"; // 0 = auto
     }
+    // SnapOrka: same legacy-sentinel issue with "0" for filament-INDEX fields
+    // (they're 1-based; 0 used to mean "inherit from default"). Newer schema rejects 0.
+    if (value == "0") {
+        if (opt_key == "wall_filament" ||
+            opt_key == "sparse_infill_filament" ||
+            opt_key == "solid_infill_filament" ||
+            opt_key == "support_filament" ||
+            opt_key == "support_interface_filament") {
+            value = "1";
+        }
+    }
     //BBS: handle legacy options
     if (opt_key == "enable_wipe_tower") {
         opt_key = "enable_prime_tower";
