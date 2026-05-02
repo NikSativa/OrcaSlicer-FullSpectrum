@@ -2325,6 +2325,11 @@ size_t MixedFilamentManager::enabled_count() const
 
 std::vector<std::string> MixedFilamentManager::display_colors() const
 {
+    // SnapOrka: when master toggle (enable_mixed_filaments) is OFF, return empty so
+    // 3D scene + assembly view + extruder color queries all stop seeing mixed slots.
+    // Stored entries remain — re-enabling the toggle restores them visually.
+    if (!m_active)
+        return {};
     std::vector<std::string> colors;
     for (const auto &mf : m_mixed)
         if (mf.enabled && !mf.deleted)
