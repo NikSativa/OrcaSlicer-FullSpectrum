@@ -66,13 +66,13 @@
         "0"
     ],
     "fan_min_speed": [
-        "20"
+        "0"
     ],
     "fan_max_speed": [
-        "40"
+        "20"
     ],
     "overhang_fan_speed": [
-        "90"
+        "25"
     ],
     "overhang_fan_threshold": [
         "25%"
@@ -90,7 +90,7 @@
         "3"
     ],
     "full_fan_speed_layer": [
-        "4"
+        "0"
     ],
     "filament_retraction_length": [
         "1.4"
@@ -175,14 +175,5 @@
     ],
     "required_nozzle_HRC": [
         "3"
-    ],
-    "activate_air_filtration": [
-        "0"
-    ],
-    "complete_print_exhaust_fan_speed": [
-        "70"
-    ],
-    "during_print_exhaust_fan_speed": [
-        "70"
     ]
 }
