@@ -42,28 +42,28 @@
         "80"
     ],
     "hot_plate_temp": [
-        "75"
+        "60"
     ],
     "hot_plate_temp_initial_layer": [
-        "80"
+        "60"
     ],
     "textured_plate_temp": [
-        "0"
+        "60"
     ],
     "textured_plate_temp_initial_layer": [
-        "0"
+        "60"
     ],
     "eng_plate_temp": [
-        "0"
+        "60"
     ],
     "eng_plate_temp_initial_layer": [
-        "0"
+        "60"
     ],
     "cool_plate_temp": [
-        "0"
+        "30"
     ],
     "cool_plate_temp_initial_layer": [
-        "0"
+        "30"
     ],
     "fan_min_speed": [
         "0"
