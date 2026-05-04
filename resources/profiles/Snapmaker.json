@@ -1319,6 +1319,78 @@
     {
       "name": "Polymaker Tough PLA Family @U1",
       "sub_path": "filament/Polymaker Tough PLA Family @U1.json"
+    },
+    {
+      "name": "Generic PETG @base2",
+      "sub_path": "filament/Generic PETG @base2.json"
+    },
+    {
+      "name": "Generic PETG @U1 0.2 nozzle",
+      "sub_path": "filament/Generic PETG @U1 0.2 nozzle.json"
+    },
+    {
+      "name": "Generic PETG @U1 0.6 nozzle",
+      "sub_path": "filament/Generic PETG @U1 0.6 nozzle.json"
+    },
+    {
+      "name": "Generic PETG @U1 0.8 nozzle",
+      "sub_path": "filament/Generic PETG @U1 0.8 nozzle.json"
+    },
+    {
+      "name": "Generic PETG HF @base2",
+      "sub_path": "filament/Generic PETG HF @base2.json"
+    },
+    {
+      "name": "Generic PETG HF @U1 0.2 nozzle",
+      "sub_path": "filament/Generic PETG HF @U1 0.2 nozzle.json"
+    },
+    {
+      "name": "Generic PETG HF @U1 0.6 nozzle",
+      "sub_path": "filament/Generic PETG HF @U1 0.6 nozzle.json"
+    },
+    {
+      "name": "Generic PETG HF @U1 0.8 nozzle",
+      "sub_path": "filament/Generic PETG HF @U1 0.8 nozzle.json"
+    },
+    {
+      "name": "Generic PETG-CF @base2",
+      "sub_path": "filament/Generic PETG-CF @base2.json"
+    },
+    {
+      "name": "Generic PETG-CF @U1 0.6 nozzle",
+      "sub_path": "filament/Generic PETG-CF @U1 0.6 nozzle.json"
+    },
+    {
+      "name": "Generic PETG-CF @U1 0.8 nozzle",
+      "sub_path": "filament/Generic PETG-CF @U1 0.8 nozzle.json"
+    },
+    {
+      "name": "Generic PETG-GF @base2",
+      "sub_path": "filament/Generic PETG-GF @base2.json"
+    },
+    {
+      "name": "Generic PETG-GF @U1 0.6 nozzle",
+      "sub_path": "filament/Generic PETG-GF @U1 0.6 nozzle.json"
+    },
+    {
+      "name": "Generic PETG-GF @U1 0.8 nozzle",
+      "sub_path": "filament/Generic PETG-GF @U1 0.8 nozzle.json"
+    },
+    {
+      "name": "Snapmaker PETG HF @U1 base2",
+      "sub_path": "filament/Snapmaker PETG HF @U1 base2.json"
+    },
+    {
+      "name": "Snapmaker PETG HF @U1 0.2 nozzle",
+      "sub_path": "filament/Snapmaker PETG HF @U1 0.2 nozzle.json"
+    },
+    {
+      "name": "Snapmaker PETG HF @U1 0.6 nozzle",
+      "sub_path": "filament/Snapmaker PETG HF @U1 0.6 nozzle.json"
+    },
+    {
+      "name": "Snapmaker PETG HF @U1 0.8 nozzle",
+      "sub_path": "filament/Snapmaker PETG HF @U1 0.8 nozzle.json"
     }
   ],
   "machine_list": [
