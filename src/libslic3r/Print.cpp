@@ -2692,6 +2692,11 @@ bool Print::has_wipe_tower() const
 
         return !m_config.spiral_mode.value && m_config.filament_diameter.values.size() > 1;
     }
+    // SnapOrka: IDEX/multi-physical-extruder printers (U1 etc.) — allow wipe-into-infill flow without
+    // a physical prime tower. mark_wiping_extrusions still runs (so flush_into_infill takes effect), but
+    // _make_wipe_tower skips geometry generation. Safe because IDEX toolchange purge is tiny (1-3mm³).
+    if (!needs_prime_tower_for_wiping() && !m_config.spiral_mode.value && m_config.filament_diameter.values.size() > 1)
+        return true;
     return false;
 }
 
@@ -2803,6 +2808,27 @@ void Print::_make_wipe_tower()
         }
     }
     this->throw_if_canceled();
+
+    // SnapOrka: IDEX/multi-physical-extruder without prime tower — mark wiping extrusions only,
+    // skip tower geometry generation. Toolchange purge is tiny (1-3mm³ ooze cleanup), fits in
+    // any layer's infill, no overflow risk → no need for a physical prime tower.
+    if (!m_config.enable_prime_tower.value && !needs_prime_tower_for_wiping()) {
+        unsigned int current_extruder_id = m_wipe_tower_data.tool_ordering.first_extruder();
+        for (auto &layer_tools : m_wipe_tower_data.tool_ordering.layer_tools()) {
+            if (!layer_tools.has_wipe_tower)
+                continue;
+            for (const auto extruder_id : layer_tools.extruders) {
+                if (extruder_id != current_extruder_id) {
+                    float volume_to_wipe = wipe_volumes[current_extruder_id][extruder_id];
+                    volume_to_wipe *= m_config.flush_multiplier;
+                    layer_tools.wiping_extrusions().mark_wiping_extrusions(*this, current_extruder_id, extruder_id, volume_to_wipe);
+                    current_extruder_id = extruder_id;
+                }
+            }
+            layer_tools.wiping_extrusions().ensure_perimeters_infills_order(*this);
+        }
+        return;
+    }
 
     if (!bUseWipeTower2) {
         // in BBL machine, wipe tower is only use to prime extruder. So just use a global wipe volume.
