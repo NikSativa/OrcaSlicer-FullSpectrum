@@ -799,8 +799,14 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig *config, co
 
     toggle_line("prime_volume",have_prime_tower && (!purge_in_primetower || !bSEMM));
 
+    // SnapOrka: IDEX/multi-physical-extruder printers (!bSEMM, e.g. U1/J1/A350-Dual) can flush
+    // purge into infill/objects/support without a prime tower — toolchange = move to other parked
+    // hotend, only ~1-3mm³ ooze cleanup needed which fits any infill. See _make_wipe_tower's
+    // IDEX no-tower branch in Print.cpp. For single-extruder MMU/AMS (bSEMM) the prime tower
+    // is still required as overflow target for 50-100mm³ purge volumes.
+    const bool can_flush_into_targets = have_prime_tower || !bSEMM;
     for (auto el : {"flush_into_infill", "flush_into_support", "flush_into_objects"})
-        toggle_field(el, have_prime_tower);
+        toggle_field(el, can_flush_into_targets);
 
     // BBS: MusangKing - Hide "Independent support layer height" option
     toggle_line("independent_support_layer_height", have_support_material && !have_prime_tower);
