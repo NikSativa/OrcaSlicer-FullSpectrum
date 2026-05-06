@@ -1,14 +1,26 @@
 #include <catch2/catch.hpp>
 
 #include "libslic3r/ExtrusionEntity.hpp"
+#include "libslic3r/Format/FullSpectrum3mf/Fs3mfConstants.hpp"
+#include "libslic3r/Format/FullSpectrum3mf/Fs3mfJson.hpp"
+#include "libslic3r/Format/FullSpectrum3mf/Fs3mfLegacyBridge.hpp"
+#include "libslic3r/Format/FullSpectrum3mf/Fs3mfReader.hpp"
+#include "libslic3r/Format/FullSpectrum3mf/Fs3mfWriter.hpp"
+#include "libslic3r/Model.hpp"
 #include "libslic3r/PresetBundle.hpp"
 #include "libslic3r/Print.hpp"
 #include "libslic3r/GCode/ToolOrdering.hpp"
+#include "libslic3r/TriangleMesh.hpp"
+#include "libslic3r/TriangleSelector.hpp"
 
+#include <algorithm>
+#include <map>
+#include <set>
 #include <sstream>
 #include <vector>
 
 using namespace Slic3r;
+using namespace Slic3r::FullSpectrum3mf;
 
 namespace {
 
@@ -63,6 +75,97 @@ struct MixedAutoGenerateGuard
 
     bool previous = true;
 };
+
+static PresetBundle make_bundle_with_filaments(const std::vector<std::string> &colors)
+{
+    PresetBundle bundle;
+    bundle.filament_presets.assign(colors.size(), "Default Filament");
+    bundle.project_config.option<ConfigOptionStrings>("filament_colour")->values = colors;
+    bundle.project_config.option<ConfigOptionStrings>("filament_settings_id", true)->values.assign(colors.size(), "Default Filament");
+    bundle.update_multi_material_filament_presets();
+    return bundle;
+}
+
+static const PackagePartPlan *find_fullspectrum_part(const PackageWritePlan &plan, const std::string &path)
+{
+    auto it = std::find_if(plan.parts.begin(), plan.parts.end(), [&path](const PackagePartPlan &part) {
+        return part.path == path;
+    });
+    return it == plan.parts.end() ? nullptr : &*it;
+}
+
+static std::map<std::string, std::string> fullspectrum_part_map(const PackageWritePlan &plan)
+{
+    std::map<std::string, std::string> parts;
+    for (const PackagePartPlan &part : plan.parts)
+        parts[package_path_to_zip_path(part.path)] = part.bytes;
+    return parts;
+}
+
+static PackageModel make_assignment_package_model()
+{
+    PackageModel package;
+
+    package.project.kind = KIND_PROJECT;
+    package.project.schema_version = PROFILE_VERSION;
+    package.project.project_id = "proj_assignment_test";
+    package.project.display_name = "assignment import";
+    package.project.legacy_projection_written = true;
+
+    package.materials.kind = KIND_MATERIALS;
+    package.materials.schema_version = PROFILE_VERSION;
+    package.materials.physical_filaments.push_back({"fil_red", "Red", "PLA", 1.75, "#FF0000", 1});
+    package.materials.physical_filaments.push_back({"fil_blue", "Blue", "PLA", 1.75, "#0000FF", 2});
+
+    package.identity_map.kind = KIND_IDENTITY_MAP;
+    package.identity_map.schema_version = PROFILE_VERSION;
+    package.identity_map.model_object_bindings.push_back({10, "obj_a"});
+    package.identity_map.volume_bindings.push_back({10, 77, "obj_a", "vol_a"});
+    package.identity_map.material_bindings.push_back({1, "fil_red"});
+    package.identity_map.material_bindings.push_back({2, "fil_blue"});
+
+    package.assignments.kind = KIND_ASSIGNMENTS;
+    package.assignments.schema_version = PROFILE_VERSION;
+
+    Assignment assignment;
+    assignment.id = "assign_vol_a";
+    assignment.target.kind = "volume";
+    assignment.target.stable_volume_id = "vol_a";
+    assignment.material_ref = "fil_blue";
+    package.assignments.assignments.push_back(assignment);
+    package.assignments.paint_state_bindings.push_back({"vol_a", 3, "fil_blue"});
+
+    package.manifest.kind = KIND_MANIFEST;
+    package.manifest.schema_version = PROFILE_VERSION;
+    package.manifest.document_class = "project";
+    package.manifest.package_id = "pkg_assignment_test";
+    package.manifest.required_features = {
+        FEATURE_PROJECT_CORE,
+        FEATURE_IDENTITY_MAP,
+        FEATURE_MATERIALS_CORE,
+        FEATURE_ASSIGNMENTS
+    };
+    package.manifest.optional_features = {FEATURE_LEGACY_PROJECTION};
+    package.manifest.authoritative_sources = {
+        {"project", PATH_PROJECT},
+        {"identity_map", PATH_IDENTITY_MAP},
+        {"materials", PATH_MATERIALS},
+        {"assignments", PATH_ASSIGNMENTS}
+    };
+    package.manifest.legacy_projection.present = true;
+    package.manifest.legacy_projection.derived_from = {PATH_PROJECT, PATH_MATERIALS, PATH_ASSIGNMENTS};
+    package.manifest.legacy_projection.paths = {"/Metadata/project_settings.config"};
+
+    return package;
+}
+
+static ArchiveImportState import_state_from_plan(const PackageWritePlan &plan)
+{
+    ArchiveImportState state;
+    for (const PackagePartPlan &part : plan.parts)
+        state.add_part(package_path_to_zip_path(part.path), part.bytes);
+    return state;
+}
 
 } // namespace
 
@@ -527,4 +630,237 @@ TEST_CASE("Extrusion loop and multipath entities preserve inset index", "[MixedF
 
     ExtrusionLoop loop_copy(loop_from_path);
     CHECK(loop_copy.inset_idx == 2);
+}
+
+TEST_CASE("FullSpectrum mixed filaments round-trip canonical grouped pattern data", "[FullSpectrum3mf]")
+{
+    const std::vector<std::string> refs = {"fil_red", "fil_blue", "fil_green"};
+    const std::vector<std::string> colors = {"#FF0000", "#0000FF", "#00FF00"};
+
+    MixedFilamentManager mgr;
+    mgr.add_custom_filament(1, 2, 50, colors);
+    REQUIRE(mgr.mixed_filaments().size() == 1);
+
+    MixedFilament &row = mgr.mixed_filaments().front();
+    row.stable_id = 4242;
+    row.manual_pattern = MixedFilamentManager::normalize_manual_pattern("1/2, 2/3");
+    row.gradient_component_ids = "123";
+    row.gradient_component_weights = "50/25/25";
+    row.distribution_mode = int(MixedFilament::LayerCycle);
+    row.local_z_max_sublayers = 4;
+    row.component_a_surface_offset = 0.02f;
+    row.component_b_surface_offset = -0.01f;
+
+    const MixedFilaments canonical = mixed_filaments_from_manager(mgr, refs);
+    REQUIRE(canonical.virtual_filaments.size() == 1);
+    CHECK(canonical.virtual_filaments.front().id == "mix_4242");
+    REQUIRE(canonical.virtual_filaments.front().manual_pattern);
+    CHECK(canonical.virtual_filaments.front().manual_pattern->groups[1][1] == "physical:fil_green");
+    REQUIRE(canonical.virtual_filaments.front().gradient);
+    CHECK(canonical.virtual_filaments.front().gradient->component_refs[2] == "fil_green");
+    REQUIRE(canonical.virtual_filaments.front().local_z);
+    CHECK(canonical.virtual_filaments.front().local_z->max_sublayers == 4);
+
+    const MixedFilaments parsed = parse_json<MixedFilaments>(serialize_json(canonical));
+    MixedFilamentManager rebuilt = manager_from_mixed_filaments(parsed, colors, refs);
+    REQUIRE(rebuilt.mixed_filaments().size() == 1);
+    CHECK(rebuilt.mixed_filaments().front().stable_id == 4242);
+    CHECK(rebuilt.mixed_filaments().front().manual_pattern == "12,23");
+    CHECK(rebuilt.mixed_filaments().front().gradient_component_ids == "123");
+    CHECK(rebuilt.mixed_filaments().front().gradient_component_weights == "50/25/25");
+    CHECK(rebuilt.mixed_filaments().front().component_a_surface_offset == Approx(0.02f));
+    CHECK(rebuilt.mixed_filaments().front().component_b_surface_offset == Approx(-0.01f));
+}
+
+TEST_CASE("FullSpectrum writer emits core package parts and mixed assignments", "[FullSpectrum3mf]")
+{
+    PresetBundle bundle = make_bundle_with_filaments({"#FF0000", "#0000FF"});
+
+    MixedFilamentManager mgr;
+    mgr.add_custom_filament(1, 2, 25, {"#FF0000", "#0000FF"});
+    REQUIRE(mgr.mixed_filaments().size() == 1);
+    mgr.mixed_filaments().front().stable_id = 9001;
+    bundle.project_config.option<ConfigOptionString>("mixed_filament_definitions")->value = mgr.serialize_custom_entries();
+
+    GeometryBindingInput geometry;
+    geometry.project_name = "canonical writer test";
+    geometry.objects.push_back({10, "obj_a"});
+    geometry.volumes.push_back({10, 11, "obj_a", "vol_a", 3, {3}});
+
+    const PackageWritePlan plan = build_write_plan(bundle.project_config, geometry, true);
+
+    REQUIRE(find_fullspectrum_part(plan, PATH_MANIFEST) != nullptr);
+    REQUIRE(find_fullspectrum_part(plan, PATH_PROJECT) != nullptr);
+    REQUIRE(find_fullspectrum_part(plan, PATH_IDENTITY_MAP) != nullptr);
+    REQUIRE(find_fullspectrum_part(plan, PATH_MATERIALS) != nullptr);
+    REQUIRE(find_fullspectrum_part(plan, PATH_ASSIGNMENTS) != nullptr);
+    REQUIRE(find_fullspectrum_part(plan, PATH_MIXED_FILAMENTS) != nullptr);
+
+    const Manifest manifest = parse_json<Manifest>(find_fullspectrum_part(plan, PATH_MANIFEST)->bytes);
+    CHECK(std::find(manifest.required_features.begin(),
+                    manifest.required_features.end(),
+                    std::string(FEATURE_MIXED_FILAMENTS)) != manifest.required_features.end());
+    CHECK(manifest.legacy_projection.present);
+
+    const Assignments assignments = parse_json<Assignments>(find_fullspectrum_part(plan, PATH_ASSIGNMENTS)->bytes);
+    REQUIRE(assignments.assignments.size() == 1);
+    CHECK(assignments.assignments.front().material_ref == "mix_9001");
+    REQUIRE(assignments.paint_state_bindings.size() == 1);
+    CHECK(assignments.paint_state_bindings.front().material_ref == "mix_9001");
+}
+
+TEST_CASE("FullSpectrum writer keeps material ids unique for duplicate filament sources", "[FullSpectrum3mf]")
+{
+    PresetBundle bundle = make_bundle_with_filaments({"#FF0000", "#0000FF", "#00FF00"});
+    bundle.project_config.option<ConfigOptionStrings>("filament_ids", true)->values = {"shared_spool", "shared_spool", "shared_spool"};
+
+    MixedFilamentManager mgr;
+    mgr.add_custom_filament(1, 2, 50, {"#FF0000", "#0000FF", "#00FF00"});
+    mgr.add_custom_filament(1, 3, 50, {"#FF0000", "#0000FF", "#00FF00"});
+    mgr.mixed_filaments()[0].stable_id = 1234;
+    mgr.mixed_filaments()[1].stable_id = 1234;
+    bundle.project_config.option<ConfigOptionString>("mixed_filament_definitions")->value = mgr.serialize_custom_entries();
+
+    const PackageWritePlan plan = build_write_plan(bundle.project_config, {}, true);
+
+    const Materials materials = parse_json<Materials>(find_fullspectrum_part(plan, PATH_MATERIALS)->bytes);
+    std::set<std::string> material_ids;
+    for (const PhysicalFilament &filament : materials.physical_filaments)
+        CHECK(material_ids.insert(filament.id).second);
+
+    const MixedFilaments mixed = parse_json<MixedFilaments>(find_fullspectrum_part(plan, PATH_MIXED_FILAMENTS)->bytes);
+    for (const VirtualFilament &filament : mixed.virtual_filaments)
+        CHECK(material_ids.insert(filament.id).second);
+}
+
+TEST_CASE("FullSpectrum canonical mixed rows override legacy mixed definitions on import", "[FullSpectrum3mf]")
+{
+    PresetBundle bundle = make_bundle_with_filaments({"#FF0000", "#0000FF"});
+
+    MixedFilamentManager mgr;
+    mgr.add_custom_filament(1, 2, 25, {"#FF0000", "#0000FF"});
+    mgr.mixed_filaments().front().stable_id = 777;
+    bundle.project_config.option<ConfigOptionString>("mixed_filament_definitions")->value = mgr.serialize_custom_entries();
+
+    const PackageWritePlan plan = build_write_plan(bundle.project_config, {}, true);
+    std::map<std::string, std::string> parts = fullspectrum_part_map(plan);
+
+    bundle.project_config.option<ConfigOptionString>("mixed_filament_definitions")->value = "1,2,1,1,75,0,u1";
+    REQUIRE(apply_canonical_mixed_filaments_to_config(parts, bundle.project_config));
+
+    const std::string upgraded = bundle.project_config.option<ConfigOptionString>("mixed_filament_definitions")->value;
+    CHECK(upgraded.find("u777") != std::string::npos);
+    CHECK(upgraded.find(",25,") != std::string::npos);
+    CHECK(upgraded.find(",75,") == std::string::npos);
+}
+
+TEST_CASE("FullSpectrum reader blocks unknown required features", "[FullSpectrum3mf]")
+{
+    PresetBundle bundle = make_bundle_with_filaments({"#FF0000", "#0000FF"});
+
+    Manifest manifest;
+    manifest.kind = KIND_MANIFEST;
+    manifest.schema_version = PROFILE_VERSION;
+    manifest.document_class = "project";
+    manifest.package_id = "pkg_future";
+    manifest.required_features = {FEATURE_PROJECT_CORE, "fs.future.required.v9"};
+
+    std::map<std::string, std::string> parts;
+    parts[package_path_to_zip_path(PATH_MANIFEST)] = serialize_json(manifest);
+
+    std::string warning;
+    CHECK_FALSE(apply_canonical_mixed_filaments_to_config(parts, bundle.project_config, &warning));
+    CHECK(warning.find("fs.future.required.v9") != std::string::npos);
+}
+
+TEST_CASE("FullSpectrum reader rejects canonical parts with failed checksums", "[FullSpectrum3mf]")
+{
+    PresetBundle bundle = make_bundle_with_filaments({"#FF0000", "#0000FF"});
+    const PackageWritePlan plan = build_write_plan(bundle.project_config, {}, true);
+
+    std::map<std::string, std::string> parts = fullspectrum_part_map(plan);
+    parts[package_path_to_zip_path(PATH_MATERIALS)] += "\n";
+
+    std::string warning;
+    CHECK_FALSE(apply_canonical_mixed_filaments_to_config(parts, bundle.project_config, &warning));
+    CHECK(warning.find("checksum mismatch") != std::string::npos);
+}
+
+TEST_CASE("FullSpectrum reader applies canonical volume and paint assignments", "[FullSpectrum3mf]")
+{
+    PresetBundle bundle = make_bundle_with_filaments({"#FF0000", "#0000FF"});
+    DynamicPrintConfig config = bundle.project_config;
+
+    Model model;
+    ModelObject *object = model.add_object();
+    object->add_instance();
+    ModelVolume *volume = object->add_volume(make_cube(1., 1., 1.));
+
+    TriangleSelector selector(volume->mesh());
+    selector.set_facet(0, EnforcerBlockerType::Extruder3);
+    REQUIRE(volume->mmu_segmentation_facets.set(selector));
+
+    const PackageWritePlan plan = build_write_plan(make_assignment_package_model());
+    ArchiveImportState state = import_state_from_plan(plan);
+
+    CanonicalBindingContext context;
+    context.model_objects_by_3mf_id[10] = object;
+    context.model_volumes_by_3mf_id[77] = volume;
+
+    std::string warning;
+    REQUIRE(state.apply_to_model_and_config(model, config, context, &warning));
+    CHECK(warning.empty());
+    CHECK(volume->extruder_id() == 2);
+
+    const std::vector<size_t> painted = volume->get_extruders_from_multi_material_painting();
+    REQUIRE(painted.size() == 1);
+    CHECK(painted.front() == 1);
+
+    REQUIRE(model.model_info);
+    const std::string object_key = std::string(MODEL_METADATA_STABLE_OBJECT_PREFIX) + std::to_string(object->id().id);
+    const std::string volume_key = std::string(MODEL_METADATA_STABLE_VOLUME_PREFIX) + std::to_string(volume->id().id);
+    CHECK(model.model_info->metadata_items[object_key] == "obj_a");
+    CHECK(model.model_info->metadata_items[volume_key] == "vol_a");
+    CHECK(model.model_info->metadata_items[MODEL_METADATA_STATUS] == "canonical-loaded");
+}
+
+TEST_CASE("FullSpectrum reader preserves optional extension parts for later re-export", "[FullSpectrum3mf]")
+{
+    PresetBundle bundle = make_bundle_with_filaments({"#FF0000", "#0000FF"});
+
+    GeometryBindingInput geometry;
+    geometry.project_name = "extension preservation";
+    geometry.preserved_parts.push_back(PreservedPart{
+        "/Metadata/extensions/com.example/solver.json",
+        "application/vnd.example.solver+json",
+        "solver-extension",
+        "{\"solver\":\"keep-me\"}",
+        false,
+        true
+    });
+
+    const PackageWritePlan plan = build_write_plan(bundle.project_config, geometry, true);
+    REQUIRE(find_fullspectrum_part(plan, "/Metadata/extensions/com.example/solver.json") != nullptr);
+
+    ArchiveImportState state = import_state_from_plan(plan);
+    Model model;
+    DynamicPrintConfig config = bundle.project_config;
+    std::string warning;
+    REQUIRE(state.apply_to_model_and_config(model, config, {}, &warning));
+    CHECK(warning.empty());
+
+    const std::vector<PreservedPart> preserved = preserved_parts_from_model(model);
+    REQUIRE(preserved.size() == 1);
+    CHECK(preserved.front().path == "/Metadata/extensions/com.example/solver.json");
+    CHECK(preserved.front().bytes == "{\"solver\":\"keep-me\"}");
+
+    GeometryBindingInput rewrite_geometry;
+    rewrite_geometry.project_name = "extension preservation";
+    rewrite_geometry.preserved_parts = preserved;
+    const PackageWritePlan rewritten = build_write_plan(config, rewrite_geometry, true);
+
+    const PackagePartPlan *extension = find_fullspectrum_part(rewritten, "/Metadata/extensions/com.example/solver.json");
+    REQUIRE(extension != nullptr);
+    CHECK(extension->bytes == "{\"solver\":\"keep-me\"}");
+    CHECK(extension->must_preserve);
 }

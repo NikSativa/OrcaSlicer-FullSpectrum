@@ -14,6 +14,9 @@
 #include "../I18N.hpp"
 
 #include "bbs_3mf.hpp"
+#include "FullSpectrum3mf/Fs3mfConstants.hpp"
+#include "FullSpectrum3mf/Fs3mfReader.hpp"
+#include "FullSpectrum3mf/Fs3mfWriter.hpp"
 
 #include <limits>
 #include <stdexcept>
@@ -1073,6 +1076,8 @@ void PlateData::parse_filament_info(GCodeProcessorResult *result)
         std::vector<ObjectImporter*> m_object_importers;
 
         std::map<int, ModelVolume*> m_shared_meshes;
+        FullSpectrum3mf::CanonicalBindingContext m_fullspectrum_bindings;
+        FullSpectrum3mf::ArchiveImportState m_fullspectrum_import;
 
         //BBS: plater related structures
         bool m_is_bbl_3mf { false };
@@ -1130,6 +1135,8 @@ void PlateData::parse_filament_info(GCodeProcessorResult *result)
         void _extract_print_config_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, DynamicPrintConfig& config, ConfigSubstitutionContext& subs_context, const std::string& archive_filename);
         //BBS: add project config file logic
         void _extract_project_config_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, DynamicPrintConfig& config, ConfigSubstitutionContext& subs_context, Model& model);
+        void _extract_fullspectrum_json_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat);
+        void _apply_fullspectrum_canonical_config(Model& model, DynamicPrintConfig& config);
         //BBS: extract project embedded presets
         void _extract_project_embedded_presets_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat, std::vector<Preset*>&project_presets, Model& model, Preset::Type type, bool use_json = true);
 
@@ -1284,6 +1291,8 @@ void PlateData::parse_filament_info(GCodeProcessorResult *result)
         m_objects.clear();
         m_instances.clear();
         m_objects_metadata.clear();
+        m_fullspectrum_bindings.model_objects_by_3mf_id.clear();
+        m_fullspectrum_bindings.model_volumes_by_3mf_id.clear();
         m_curr_metadata_name.clear();
         m_curr_characters.clear();
 
@@ -1317,6 +1326,8 @@ void PlateData::parse_filament_info(GCodeProcessorResult *result)
         m_current_objects.clear();
         m_index_paths.clear();
         m_objects.clear();
+        m_fullspectrum_bindings.model_objects_by_3mf_id.clear();
+        m_fullspectrum_bindings.model_volumes_by_3mf_id.clear();
         //m_objects_aliases.clear();
         m_instances.clear();
         //m_geometries.clear();
@@ -1489,7 +1500,10 @@ void PlateData::parse_filament_info(GCodeProcessorResult *result)
 
                 BOOST_LOG_TRIVIAL(info) << __FUNCTION__ << ":" << __LINE__ << boost::format("extract %1%th file %2%, total=%3%\n")%(i+1)%name%num_entries;
 
-                if (boost::algorithm::iequals(name, BBS_PROJECT_CONFIG_FILE)) {
+                if (m_fullspectrum_import.accepts_part(name)) {
+                    _extract_fullspectrum_json_from_archive(archive, stat);
+                }
+                else if (boost::algorithm::iequals(name, BBS_PROJECT_CONFIG_FILE)) {
                     // extract slic3r print config file
                     ConfigSubstitutionContext config_substitutions(ForwardCompatibilitySubstitutionRule::Disable);
                     _extract_project_config_from_archive(archive, stat, config, config_substitutions, model);
@@ -1509,6 +1523,8 @@ void PlateData::parse_filament_info(GCodeProcessorResult *result)
                 }
             }
         }
+
+        _apply_fullspectrum_canonical_config(model, config);
 
         //BBS: load the plate info into plate_data_list
         std::map<int, PlateData*>::iterator it = m_plater_data.begin();
@@ -1806,7 +1822,10 @@ void PlateData::parse_filament_info(GCodeProcessorResult *result)
                     continue;
                 }
 
-                if (boost::algorithm::iequals(name, BBS_LAYER_HEIGHTS_PROFILE_FILE)) {
+                if (m_fullspectrum_import.accepts_part(name)) {
+                    _extract_fullspectrum_json_from_archive(archive, stat);
+                }
+                else if (boost::algorithm::iequals(name, BBS_LAYER_HEIGHTS_PROFILE_FILE)) {
                     // extract slic3r layer heights profile file
                     _extract_layer_heights_profile_config_from_archive(archive, stat);
                 }
@@ -1900,6 +1919,8 @@ void PlateData::parse_filament_info(GCodeProcessorResult *result)
                 }
             }
         }
+
+        _apply_fullspectrum_canonical_config(model, config);
 
         lock.close();
 
@@ -2547,6 +2568,34 @@ void PlateData::parse_filament_info(GCodeProcessorResult *result)
                 return;
             }
             BOOST_LOG_TRIVIAL(info) << __FUNCTION__ << boost::format(", load project config file successfully from %1%\n") %dest_file;
+        }
+    }
+
+    void _BBS_3MF_Importer::_extract_fullspectrum_json_from_archive(mz_zip_archive& archive, const mz_zip_archive_file_stat& stat)
+    {
+        if (stat.m_uncomp_size == 0)
+            return;
+
+        std::string buffer((size_t)stat.m_uncomp_size, 0);
+        mz_bool res = mz_zip_reader_extract_file_to_mem(&archive, stat.m_filename, buffer.data(), buffer.size(), 0);
+        if (res == 0) {
+            add_error("Error while reading FullSpectrum JSON data");
+            return;
+        }
+
+        m_fullspectrum_import.add_part(stat.m_filename, std::move(buffer));
+    }
+
+    void _BBS_3MF_Importer::_apply_fullspectrum_canonical_config(Model& model, DynamicPrintConfig& config)
+    {
+        if (m_fullspectrum_import.empty())
+            return;
+
+        std::string warning;
+        if (m_fullspectrum_import.apply_to_model_and_config(model, config, m_fullspectrum_bindings, &warning)) {
+            BOOST_LOG_TRIVIAL(info) << "FullSpectrum 3MF canonical parts applied as project authority";
+        } else if (!warning.empty()) {
+            BOOST_LOG_TRIVIAL(warning) << "FullSpectrum 3MF canonical import warning: " << warning;
         }
     }
 
@@ -3985,6 +4034,7 @@ void PlateData::parse_filament_info(GCodeProcessorResult *result)
             m_objects.insert({ id, object_index });
             current_object.model_object_idx = object_index;
             current_object.object = model_object;
+            m_fullspectrum_bindings.model_objects_by_3mf_id[object_id] = model_object;
 
             ModelInstance* instance = m_model->objects[object_index]->add_instance();
             if (instance == nullptr) {
@@ -4881,6 +4931,8 @@ void PlateData::parse_filament_info(GCodeProcessorResult *result)
                     volume->name += "_" + std::to_string(renamed_volumes_count + 1);
                 ++renamed_volumes_count;
             }
+
+            m_fullspectrum_bindings.model_volumes_by_3mf_id[sub_object->id] = volume;
         }
 
         return true;
@@ -5600,6 +5652,8 @@ void PlateData::parse_filament_info(GCodeProcessorResult *result)
         std::string m_thumbnail_small  = PRINTER_THUMBNAIL_SMALL_FILE;
         std::map<void const *, std::pair<ObjectData*, ModelVolume const *>> m_shared_meshes;
         std::map<ModelVolume const *, std::pair<std::string, int>> m_volume_paths;
+        std::vector<FullSpectrum3mf::PreservedPart> m_fullspectrum_preserved_parts;
+        std::string m_fullspectrum_relationships_xml;
     public:
         //BBS: add plate data related logic
 
@@ -5630,6 +5684,10 @@ void PlateData::parse_filament_info(GCodeProcessorResult *result)
         bool _add_file_to_archive(mz_zip_archive& archive, const std::string & path_in_zip, const std::string & file_path);
 
         bool _add_content_types_file_to_archive(mz_zip_archive& archive);
+        bool _add_fullspectrum_parts_to_archive(mz_zip_archive& archive,
+                                                const Model& model,
+                                                const DynamicPrintConfig &config,
+                                                const ObjectToObjectDataMap &objects_data);
 
         bool _add_thumbnail_file_to_archive(mz_zip_archive& archive, const ThumbnailData& thumbnail_data, const char* local_path, int index, bool generate_small_thumbnail = false);
         bool _add_calibration_file_to_archive(mz_zip_archive& archive, const ThumbnailData& thumbnail_data, int index);
@@ -5694,6 +5752,8 @@ void PlateData::parse_filament_info(GCodeProcessorResult *result)
         m_from_backup_save = store_params.strategy & SaveStrategy::Backup;
 
         m_use_loaded_id = store_params.strategy & SaveStrategy::UseLoadedId;
+        m_fullspectrum_preserved_parts = FullSpectrum3mf::preserved_parts_from_model(*store_params.model);
+        m_fullspectrum_relationships_xml.clear();
 
         if (auto info = store_params.model->model_info) {
             if (auto iter = info->metadata_items.find("Thumbnail_Small"); iter != info->metadata_items.end())
@@ -6125,6 +6185,11 @@ void PlateData::parse_filament_info(GCodeProcessorResult *result)
                     if (cb_cancel) return false;
                 }
             }
+
+            if (config != nullptr && !_add_fullspectrum_parts_to_archive(archive, model, *config, objects_data)) {
+                BOOST_LOG_TRIVIAL(error) << __FUNCTION__ << ":" << __LINE__ << boost::format(", _add_fullspectrum_parts_to_archive failed\n");
+                return false;
+            }
         }
 
         // add plate_N.gcode.md5 to file
@@ -6276,6 +6341,12 @@ void PlateData::parse_filament_info(GCodeProcessorResult *result)
         stream << " <Default Extension=\"model\" ContentType=\"application/vnd.ms-package.3dmanufacturing-3dmodel+xml\"/>\n";
         stream << " <Default Extension=\"png\" ContentType=\"image/png\"/>\n";
         stream << " <Default Extension=\"gcode\" ContentType=\"text/x.gcode\"/>\n";
+        for (const auto &content_type : FullSpectrum3mf::content_type_overrides())
+            stream << " <Override PartName=\"" << content_type.first << "\" ContentType=\"" << content_type.second << "\"/>\n";
+        for (const FullSpectrum3mf::PreservedPart &part : m_fullspectrum_preserved_parts) {
+            if (!part.path.empty() && !part.content_type.empty())
+                stream << " <Override PartName=\"" << part.path << "\" ContentType=\"" << part.content_type << "\"/>\n";
+        }
         stream << "</Types>";
 
         std::string out = stream.str();
@@ -6286,6 +6357,71 @@ void PlateData::parse_filament_info(GCodeProcessorResult *result)
             return false;
         }
 
+        return true;
+    }
+
+    bool _BBS_3MF_Exporter::_add_fullspectrum_parts_to_archive(mz_zip_archive& archive,
+                                                               const Model& model,
+                                                               const DynamicPrintConfig &config,
+                                                               const ObjectToObjectDataMap &objects_data)
+    {
+        FullSpectrum3mf::GeometryBindingInput geometry;
+        if (model.model_info)
+            geometry.project_name = model.model_info->model_name;
+        geometry.preserved_parts = m_fullspectrum_preserved_parts;
+
+        std::set<std::string> seen_objects;
+        for (const ObjectToObjectDataMap::value_type& obj_metadata : objects_data) {
+            const ModelObject *obj = obj_metadata.second.object;
+            if (obj == nullptr)
+                continue;
+
+            const std::string stable_object_id =
+                FullSpectrum3mf::stable_object_id_from_model(model, *obj, obj_metadata.second.object_id);
+            if (seen_objects.insert(stable_object_id).second)
+                geometry.objects.push_back({obj_metadata.second.object_id, stable_object_id});
+
+            for (const ModelVolume *volume : obj->volumes) {
+                if (volume == nullptr)
+                    continue;
+
+                auto volume_id_it = obj_metadata.second.volumes_objectID.find(volume);
+                if (volume_id_it == obj_metadata.second.volumes_objectID.end())
+                    continue;
+
+                FullSpectrum3mf::VolumeBindingInput input;
+                input.model_object_id = obj_metadata.second.object_id;
+                input.model_volume_id = volume_id_it->second;
+                input.stable_object_id = stable_object_id;
+                input.stable_volume_id =
+                    FullSpectrum3mf::stable_volume_id_from_model(model, *volume, volume_id_it->second);
+                input.extruder_id = volume->extruder_id();
+                for (size_t extruder_idx : volume->get_extruders_from_multi_material_painting())
+                    input.paint_states.push_back(int(extruder_idx + 1));
+                geometry.volumes.emplace_back(std::move(input));
+            }
+        }
+
+        FullSpectrum3mf::PackageWritePlan plan;
+        try {
+            plan = FullSpectrum3mf::build_write_plan(config, geometry, true);
+        } catch (const std::exception &e) {
+            m_fullspectrum_relationships_xml.clear();
+            BOOST_LOG_TRIVIAL(error) << "Unable to build FullSpectrum 3MF parts; continuing with legacy 3MF save: " << e.what();
+            return true;
+        }
+
+        for (const FullSpectrum3mf::PackagePartPlan &part : plan.parts) {
+            const std::string zip_path = FullSpectrum3mf::package_path_to_zip_path(part.path);
+            if (!mz_zip_writer_add_mem(&archive, zip_path.c_str(), part.bytes.data(), part.bytes.size(), MZ_DEFAULT_COMPRESSION)) {
+                m_fullspectrum_relationships_xml.clear();
+                BOOST_LOG_TRIVIAL(error) << "Unable to add FullSpectrum part " << part.path
+                                         << " to archive; continuing with legacy 3MF save";
+                return true;
+            }
+        }
+
+        m_fullspectrum_relationships_xml = FullSpectrum3mf::relationships_xml(plan.relationships);
         return true;
     }
 
@@ -6441,6 +6577,8 @@ void PlateData::parse_filament_info(GCodeProcessorResult *result)
                 stream << " <Relationship Target=\"/" << xml_escape(thumbnail_file_str)
                    << "\" Id=\"rel-5\" Type=\"http://schemas.bambulab.com/package/2021/cover-thumbnail-small\"/>\n";
             }
+
+            stream << m_fullspectrum_relationships_xml;
         }
         else if (targets.empty()) {
             return false;

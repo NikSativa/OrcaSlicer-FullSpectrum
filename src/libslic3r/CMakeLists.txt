@@ -180,6 +180,21 @@ set(lisbslic3r_sources
     Format/AMF.hpp
     Format/bbs_3mf.cpp
     Format/bbs_3mf.hpp
+    Format/FullSpectrum3mf/Fs3mfConstants.cpp
+    Format/FullSpectrum3mf/Fs3mfConstants.hpp
+    Format/FullSpectrum3mf/Fs3mfIds.cpp
+    Format/FullSpectrum3mf/Fs3mfIds.hpp
+    Format/FullSpectrum3mf/Fs3mfJson.cpp
+    Format/FullSpectrum3mf/Fs3mfJson.hpp
+    Format/FullSpectrum3mf/Fs3mfLegacyBridge.cpp
+    Format/FullSpectrum3mf/Fs3mfLegacyBridge.hpp
+    Format/FullSpectrum3mf/Fs3mfReader.cpp
+    Format/FullSpectrum3mf/Fs3mfReader.hpp
+    Format/FullSpectrum3mf/Fs3mfTypes.hpp
+    Format/FullSpectrum3mf/Fs3mfValidation.cpp
+    Format/FullSpectrum3mf/Fs3mfValidation.hpp
+    Format/FullSpectrum3mf/Fs3mfWriter.cpp
+    Format/FullSpectrum3mf/Fs3mfWriter.hpp
     format.hpp
     Format/OBJ.cpp
     Format/OBJ.hpp
