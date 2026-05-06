@@ -16,6 +16,12 @@ Snapmaker_Orca_add_cmake_project(OCCT
     #DEPENDS dep_Boost
     DEPENDS ${FREETYPE_PKG}
     CMAKE_ARGS
+        # SnapOrka: explicit C++17 standard so OCCT's BVH_Traverse.hxx nested template angles
+        # `<BVH_Tree<...>>&` parse correctly. Without this, Apple Clang on GHA macos-14 defaults
+        # to a mode where `>>` is treated as right-shift -> cascading parse errors during deps build.
+        -DCMAKE_CXX_STANDARD=17
+        -DCMAKE_CXX_STANDARD_REQUIRED=ON
+        -DCMAKE_CXX_EXTENSIONS=OFF
         -DBUILD_LIBRARY_TYPE=${library_build_type}
         -DUSE_TK=OFF
         -DUSE_TBB=OFF
