@@ -2827,6 +2827,23 @@ void Print::_make_wipe_tower()
             }
             layer_tools.wiping_extrusions().ensure_perimeters_infills_order(*this);
         }
+        // Initialize empty priming/final_purge so downstream WipeTowerIntegration in GCode.cpp
+        // (which dereferences these unique_ptrs unconditionally when has_wipe_tower=true)
+        // doesn't null-deref. Empty gcode/extrusions → integration emits nothing on tool change
+        // and on final purge. final_purge.print_z is set to the last layer's print_z so that
+        // WipeTowerIntegration::finalize's `change_layer` early-out triggers (no spurious Z=0 move
+        // at end of print).
+        m_wipe_tower_data.priming     = Slic3r::make_unique<std::vector<WipeTower::ToolChangeResult>>();
+        auto final_purge              = Slic3r::make_unique<WipeTower::ToolChangeResult>();
+        final_purge->print_z          = m_wipe_tower_data.tool_ordering.layer_tools().empty()
+                                            ? 0.f
+                                            : float(m_wipe_tower_data.tool_ordering.layer_tools().back().print_z);
+        final_purge->layer_height     = 0.f;
+        final_purge->elapsed_time     = 0.f;
+        final_purge->priming          = false;
+        final_purge->initial_tool     = int(current_extruder_id);
+        final_purge->new_tool         = -1;
+        m_wipe_tower_data.final_purge = std::move(final_purge);
         return;
     }
 
