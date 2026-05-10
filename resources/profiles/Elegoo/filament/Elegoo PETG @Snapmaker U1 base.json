@@ -39,25 +39,25 @@
         "260"
     ],
     "temperature_vitrification": [
-        "80"
+        "178"
     ],
     "hot_plate_temp": [
-        "75"
+        "80"
     ],
     "hot_plate_temp_initial_layer": [
         "80"
     ],
     "textured_plate_temp": [
-        "0"
+        "80"
     ],
     "textured_plate_temp_initial_layer": [
-        "0"
+        "80"
     ],
     "eng_plate_temp": [
-        "0"
+        "80"
     ],
     "eng_plate_temp_initial_layer": [
-        "0"
+        "80"
     ],
     "cool_plate_temp": [
         "0"

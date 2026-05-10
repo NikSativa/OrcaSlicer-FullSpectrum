@@ -84,7 +84,7 @@
         "255"
     ],
     "temperature_vitrification": [
-        "80"
+        "178"
     ],
     "hot_plate_temp": [
         "80"
@@ -103,6 +103,12 @@
     ],
     "eng_plate_temp_initial_layer": [
         "80"
+    ],
+    "cool_plate_temp": [
+        "0"
+    ],
+    "cool_plate_temp_initial_layer": [
+        "0"
     ],
     "fan_min_speed": [
         "20"
