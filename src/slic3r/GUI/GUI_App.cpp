@@ -2627,7 +2627,7 @@ bool GUI_App::on_init_inner()
             associate_files(L"step");
             associate_files(L"stp");
         }
-        associate_url(L"Snapmaker_Orca");
+        associate_url(L"SnapOrka");
 
         if (app_config->get("associate_gcode") == "true")
             associate_files(L"gcode");
@@ -6159,7 +6159,7 @@ void GUI_App::open_preferences(size_t open_on_tab, const std::string& highlight_
                 associate_files(L"step");
                 associate_files(L"stp");
             }
-            associate_url(L"Snapmaker_Orca");
+            associate_url(L"SnapOrka");
         }
         else {
             if (app_config->get("associate_gcode") == "true")
@@ -7313,7 +7313,7 @@ void GUI_App::associate_files(std::wstring extend)
 
     std::wstring prog_path = L"\"" + std::wstring(app_path) + L"\"";
     std::wstring prog_id = L" Orca.Slicer.1";
-    std::wstring prog_desc = L"Snapmaker_Orca";
+    std::wstring prog_desc = L"SnapOrka";
     std::wstring prog_command = prog_path + L" \"%1\"";
     std::wstring reg_base = L"Software\\Classes";
     std::wstring reg_extension = reg_base + L"\\." + extend;
@@ -7338,7 +7338,7 @@ void GUI_App::disassociate_files(std::wstring extend)
 
     std::wstring prog_path = L"\"" + std::wstring(app_path) + L"\"";
     std::wstring prog_id = L" Orca.Slicer.1";
-    std::wstring prog_desc = L"Snapmaker_Orca";
+    std::wstring prog_desc = L"SnapOrka";
     std::wstring prog_command = prog_path + L" \"%1\"";
     std::wstring reg_base = L"Software\\Classes";
     std::wstring reg_extension = reg_base + L"\\." + extend;

@@ -3,10 +3,18 @@
 #include <iostream>
 
 
-#define SLIC3R_APP_NAME "SnapmakerOrca-FullSpectrum"
-#define SLIC3R_APP_KEY "Snapmaker_Orca"
-#define SLIC3R_VERSION "01.10.01.70"
-#define Snapmaker_VERSION "2.3.1"
+// SnapOrka: legacy hardcoded values from upstream FullSpectrum. These shadow whatever
+// CMake passes via -D flags / configure_file. Aligned to SnapOrka identity so user data
+// dir (~/Library/Application Support/<APP_KEY>/), Windows AppData paths, conf filename,
+// shell URL associations, etc. all consistently use "SnapOrka" instead of the legacy
+// "Snapmaker_Orca" string. Source of truth for runtime version is version.inc — the
+// hardcoded SLIC3R_VERSION/Snapmaker_VERSION below are fallbacks only used if CMake
+// build flags don't override them; left non-zero to avoid empty strings if something
+// reads these instead of CMake-passed values.
+#define SLIC3R_APP_NAME "SnapOrka"
+#define SLIC3R_APP_KEY "SnapOrka"
+#define SLIC3R_VERSION "00.01.04.00"
+#define Snapmaker_VERSION "0.1.5"
 #define FULLSPECTRUM_VERSION "0.9.8"
 #define MIN_FIRM_VER "1.0.0"
 #ifndef GIT_COMMIT_HASH
