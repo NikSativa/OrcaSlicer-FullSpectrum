@@ -29,9 +29,13 @@ MqttClient::MqttClient(const std::string& server_address, const std::string& cli
     connOpts_.set_clean_session(false);
     connOpts_.set_keep_alive_interval(30);
     connOpts_.set_connect_timeout(10);
-    // 初始禁用自动重连，只有首次连接成功后才启用
-    // 这样可以避免首次连接失败时的自动重连问题
-    connOpts_.set_automatic_reconnect(std::chrono::seconds(0), std::chrono::seconds(0));
+    // SnapOrka: enable Paho-level automatic reconnect from the start (2s..30s exponential backoff).
+    // The previous logic disabled it here and re-enabled it inside connected() — but Paho only reads
+    // these options during the initial connect(), so the late re-enable was a no-op and the client
+    // had NO reconnect at all. Combined with the manual 20s wait in connection_lost() that just
+    // invoked the failure callback (no explicit reconnect call), every dropped connection became
+    // permanent until the user manually re-connected.
+    connOpts_.set_automatic_reconnect(std::chrono::seconds(2), std::chrono::seconds(30));
     client_->set_callback(*this);
 
     // 设置认证信息
@@ -559,11 +563,11 @@ void MqttClient::connected(const std::string& cause)
     
     // 标记为曾经成功连接过
     ever_connected_.store(true, std::memory_order_release);
-    
-    // 连接成功后重新启用自动重连，这样后续断开就能正常重连了
-    connOpts_.set_automatic_reconnect(std::chrono::seconds(2), std::chrono::seconds(30));
-    BOOST_LOG_TRIVIAL(info) << "[MQTT_INFO] 连接成功，已启用自动重连";
-    
+
+    // SnapOrka: removed the late `set_automatic_reconnect(2,30)` call here — Paho already reads
+    // the value once at connect() time, so toggling connOpts_ here was a no-op. Auto-reconnect
+    // is now configured upfront in the constructor.
+
     // 不直接置0，让检查线程自然完成并减少计数
     // 这样可以避免竞态条件，让计数逻辑更加一致
     
