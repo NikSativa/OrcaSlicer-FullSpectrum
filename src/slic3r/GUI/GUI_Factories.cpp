@@ -1001,17 +1001,9 @@ void MenuFactory::append_menu_items_flush_options(wxMenu* menu)
     ModelConfig& select_object_config = object_list->object(selection.get_object_idx())->config;
 
     wxMenu* flush_options_menu = new wxMenu();
-    // SnapOrka: IDEX/multi-physical-extruder printers (single_extruder_multi_material=false)
-    // can flush into objects/infill/support without a prime tower — toolchange purge is tiny
-    // (1-3mm³ ooze cleanup) and fits any layer's infill. See Print::needs_prime_tower_for_wiping
-    // and _make_wipe_tower's IDEX no-tower branch for the backend logic.
     auto can_flush = [&global_config]() {
-        auto prime_tower_opt = global_config.option("enable_prime_tower");
-        const bool have_prime_tower = prime_tower_opt ? prime_tower_opt->getBool() : false;
-        if (have_prime_tower) return true;
-        const auto& printer_config = wxGetApp().preset_bundle->printers.get_edited_preset().config;
-        const bool is_semm = printer_config.opt_bool("single_extruder_multi_material");
-        return !is_semm;
+        auto option = global_config.option("enable_prime_tower");
+        return option ? option->getBool() : false;
     };
     append_menu_check_item(flush_options_menu, wxID_ANY, _L("Flush into objects' infill"), "",
         [&select_object_config, &global_config](wxCommandEvent&) {

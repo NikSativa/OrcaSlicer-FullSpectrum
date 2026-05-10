@@ -3158,24 +3158,6 @@ void PartPlate::clear_filament_map()
         m_config.erase("filament_map");
 }
 
-// SnapOrka: for IDEX/multi-physical-extruder printers (single_extruder_multi_material=false),
-// distribute filaments round-robin across hotends instead of piling them all on extruder 1.
-// Stock "Auto For Flush" mode optimizes for minimal purge volume which on IDEX without prime
-// tower collapses to "all on hotend 1" — defeating IDEX entirely. We pre-distribute so each
-// filament lives on its own hotend by default.
-static bool snaporka_is_idex_printer()
-{
-    const auto& printer_config = wxGetApp().preset_bundle->printers.get_edited_preset().config;
-    return !printer_config.opt_bool("single_extruder_multi_material");
-}
-
-static void snaporka_redistribute_filament_map(std::vector<int>& filament_maps, int extruder_count)
-{
-    if (extruder_count < 2) return;
-    for (size_t i = 0; i < filament_maps.size(); ++i)
-        filament_maps[i] = int(i % extruder_count) + 1;  // 1-based hotend ids
-}
-
 void PartPlate::on_extruder_count_changed(int extruder_count)
 {
     if (extruder_count < 2) {
@@ -3187,17 +3169,6 @@ void PartPlate::on_extruder_count_changed(int extruder_count)
         // clear_filament_map_mode();
         //  do not clear mode now, reset to default mode
         m_config.option<ConfigOptionEnum<FilamentMapMode>>("filament_map_mode", true)->value = FilamentMapMode::fmmAutoForFlush;
-    } else if (snaporka_is_idex_printer()) {
-        // SnapOrka: switching to multi-extruder mode on IDEX → redistribute existing filaments
-        // round-robin across hotends. Without this, every filament stays on extruder 1 and the
-        // user gets single-color slicing despite having multiple filaments configured.
-        std::vector<int> f_map = wxGetApp().plater()->get_global_filament_map();
-        snaporka_redistribute_filament_map(f_map, extruder_count);
-        wxGetApp().plater()->set_global_filament_map(f_map);
-        if (m_config.has("filament_map")) {
-            std::vector<int>& plate_map = m_config.option<ConfigOptionInts>("filament_map")->values;
-            snaporka_redistribute_filament_map(plate_map, extruder_count);
-        }
     }
 }
 
@@ -3205,16 +3176,7 @@ void PartPlate::set_filament_count(int filament_count)
 {
     if (m_config.has("filament_map")) {
         std::vector<int>& filament_maps = m_config.option<ConfigOptionInts>("filament_map")->values;
-        const size_t old_size = filament_maps.size();
         filament_maps.resize(filament_count, 1);
-        // SnapOrka: for IDEX, the newly added entries (default 1) get redistributed round-robin
-        // across hotends so that the second filament ends up on hotend 2, fourth on 2, etc.
-        if (snaporka_is_idex_printer() && filament_count > int(old_size)) {
-            const auto& printer_config = wxGetApp().preset_bundle->printers.get_edited_preset().config;
-            const int extruder_count   = int(printer_config.option<ConfigOptionFloats>("nozzle_diameter")->values.size());
-            for (int i = int(old_size); i < filament_count; ++i)
-                filament_maps[i] = (i % std::max(extruder_count, 1)) + 1;
-        }
     }
 }
 
@@ -3222,15 +3184,7 @@ void PartPlate::on_filament_added()
 {
     if (m_config.has("filament_map")) {
         std::vector<int>& filament_maps = m_config.option<ConfigOptionInts>("filament_map")->values;
-        // SnapOrka: on IDEX, alternate the new filament to the next hotend instead of always
-        // piling on extruder 1. With 2 hotends: 1st filament→1, 2nd→2, 3rd→1, 4th→2, ...
-        int new_hotend = 1;
-        if (snaporka_is_idex_printer()) {
-            const auto& printer_config = wxGetApp().preset_bundle->printers.get_edited_preset().config;
-            const int extruder_count   = int(printer_config.option<ConfigOptionFloats>("nozzle_diameter")->values.size());
-            new_hotend = (int(filament_maps.size()) % std::max(extruder_count, 1)) + 1;
-        }
-        filament_maps.push_back(new_hotend);
+        filament_maps.push_back(1);
     }
 }
 
