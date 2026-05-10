@@ -15,7 +15,7 @@
 #define SLIC3R_APP_KEY "SnapOrka"
 #define SLIC3R_VERSION "00.01.04.00"
 #define Snapmaker_VERSION "0.1.5"
-#define FULLSPECTRUM_VERSION "0.9.8"
+#define FULLSPECTRUM_VERSION "0.9.9"
 #define MIN_FIRM_VER "1.0.0"
 #ifndef GIT_COMMIT_HASH
 #define GIT_COMMIT_HASH "0000000" // 0000000 means uninitialized
