@@ -177,7 +177,18 @@ static std::vector<unsigned int> solve_extruder_order(const std::vector<std::vec
                 if (state >> target & 1) {
                     for (unsigned int mid_point = 0; mid_point < all_extruders.size(); ++mid_point) {
                         if(state>>mid_point&1){
-                            auto tmp = cache[state - (1 << target)][mid_point] + wipe_volumes[all_extruders[mid_point]][all_extruders[target]];
+                            // SnapOrka: all_extruders contains 1-BASED filament IDs (collect_extruders
+                            // populates via `solid_infill_filament(region) + 1`, `resolve_mixed` returns
+                            // 1-based, etc.) but wipe_volumes is sized N×N indexed 0..N-1. Convert to
+                            // 0-based and bounds-check defensively to avoid SIGSEGV on IDEX/multi-extruder
+                            // prints without prime tower (where this DP path replaces the wipe-tower path).
+                            const unsigned int from_id = all_extruders[mid_point];
+                            const unsigned int to_id   = all_extruders[target];
+                            const size_t       from_ix = from_id > 0 ? size_t(from_id - 1) : size_t(0);
+                            const size_t       to_ix   = to_id   > 0 ? size_t(to_id   - 1) : size_t(0);
+                            if (from_ix >= wipe_volumes.size() || to_ix >= wipe_volumes.size())
+                                continue;
+                            auto tmp = cache[state - (1 << target)][mid_point] + wipe_volumes[from_ix][to_ix];
                             if (cache[state][target] >tmp) {
                                 cache[state][target] = tmp;
                                 prev[state][target] = mid_point;
