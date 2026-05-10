@@ -4480,6 +4480,14 @@ LayerResult GCode::process_layer(const Print& print,
     m_writer.set_is_first_layer(first_layer);
     unsigned int first_extruder_id = layer_tools.extruders.front();
 
+    // SnapOrka: when this layer has a toolchange and the user enabled infill_first_after_color_change
+    // (default ON for IDEX U1 process), force infill-before-perimeter scheduling for every region on
+    // this layer. The first extrusion after a toolchange then lands in hidden infill, which hides the
+    // small ooze drop that accumulates on a parked IDEX hotend. See extrude_perimeters() for the
+    // consumer of this flag. Layers with a single filament are unaffected (flag stays false).
+    m_force_infill_first_this_layer = layer_tools.extruders.size() > 1 &&
+                                      print.config().infill_first_after_color_change.value;
+
     // Initialize config with the 1st object to be printed at this layer.
     m_config.apply(layer.object()->config(), true);
 
@@ -6620,7 +6628,12 @@ std::string GCode::extrude_perimeters(const Print&                              
             m_config.apply(print.get_print_region(&region - &by_region.front()).config());
             // BBS: for first layer, we always print wall firstly to get better bed adhesive force
             // This behaviour is same with cura
-            const bool should_print = is_first_layer ? !is_infill_first : (m_config.is_infill_first == is_infill_first);
+            // SnapOrka: when m_force_infill_first_this_layer is set (toolchange-on-this-layer +
+            // infill_first_after_color_change enabled), treat every region as is_infill_first=true
+            // for non-first layers. This routes perimeters into the late pass so that infill prints
+            // first after the toolchange, hiding the IDEX ooze drop in non-visible geometry.
+            const bool effective_region_infill_first = m_force_infill_first_this_layer || m_config.is_infill_first;
+            const bool should_print = is_first_layer ? !is_infill_first : (effective_region_infill_first == is_infill_first);
             if (!should_print)
                 continue;
 

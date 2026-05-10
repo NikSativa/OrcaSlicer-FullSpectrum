@@ -520,8 +520,14 @@ private:
     AvoidCrossingPerimeters             m_avoid_crossing_perimeters;
     RetractWhenCrossingPerimeters       m_retract_when_crossing_perimeters;
     bool                                m_enable_loop_clipping;
+    // SnapOrka: per-layer override flag set by process_layer() when (a) the layer involves a
+    // toolchange (layer_tools.extruders.size() > 1) AND (b) print.config().infill_first_after_color_change
+    // is true. When set, extrude_perimeters() treats every region as if region.config.is_infill_first
+    // were true — perimeters print AFTER infill so the first extrusion of the new color lands in
+    // hidden infill instead of a visible perimeter (hides IDEX ooze drop). Default false (off).
+    bool                                m_force_infill_first_this_layer = false;
     //resonance avoidance
-    bool                                m_resonance_avoidance; 
+    bool                                m_resonance_avoidance;
     // If enabled, the G-code generator will put following comments at the ends
     // of the G-code lines: _EXTRUDE_SET_SPEED, _WIPE, _OVERHANG_FAN_START, _OVERHANG_FAN_END
     // Those comments are received and consumed (removed from the G-code) by the CoolingBuffer.pm Perl module.

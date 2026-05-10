@@ -358,6 +358,7 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
             || opt_key == "prime_tower_brim_chamfer_max_width"
             || opt_key == "flush_into_infill"
             || opt_key == "flush_into_support"
+            || opt_key == "infill_first_after_color_change"
             || opt_key == "initial_layer_infill_speed"
             || opt_key == "travel_speed"
             || opt_key == "travel_speed_z"
@@ -2692,13 +2693,6 @@ bool Print::has_wipe_tower() const
 
         return !m_config.spiral_mode.value && m_config.filament_diameter.values.size() > 1;
     }
-    // SnapOrka: IDEX/multi-physical-extruder printers (U1, J1, A350-Dual) without prime tower —
-    // we DON'T fake has_wipe_tower=true here. Earlier attempt did and caused wrong-color preview
-    // because GCode pipeline expected a real tower with priming/tool_changes data structures.
-    // Instead we let the slicer go through the no-wipe-tower path entirely: T0/T1 commands are
-    // emitted at toolchange points, printer-side IDEX firmware handles the physical hotend swap,
-    // each filament's extrusions print in their own color. No purge needed because IDEX colors
-    // never share a hotend.
     return false;
 }
 

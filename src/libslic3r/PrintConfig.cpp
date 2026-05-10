@@ -6152,6 +6152,18 @@ void PrintConfigDef::init_fff_params()
         "It will not take effect unless the prime tower is enabled.");
     def->set_default_value(new ConfigOptionBool(false));
 
+    // SnapOrka: IDEX-style infill-first scheduling on color-change layers
+    def = this->add("infill_first_after_color_change", coBool);
+    def->label = L("Infill first on color-change layers");
+    def->category = L("Multimaterial");
+    def->tooltip = L("On layers where a filament/extruder change occurs, print infill before perimeters. "
+                     "For IDEX/multi-extruder printers this hides the small ooze drop accumulated on a "
+                     "parked hotend in the infill instead of on a visible perimeter when the new color "
+                     "resumes printing. Has no effect on layers with a single filament. Default ON for "
+                     "IDEX, OFF for single-extruder MMU/AMS.");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(false));
+
     def = this->add("wipe_tower_bridging", coFloat);
     def->label = L("Maximal bridging distance");
     def->tooltip = L("Maximal distance between supports on sparse infill sections.");

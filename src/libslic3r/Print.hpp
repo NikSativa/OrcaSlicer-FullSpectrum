@@ -1034,12 +1034,6 @@ public:
     // Return 4 wipe tower corners in the world coordinates (shifted and rotated), including the wipe tower brim.
     Points first_layer_wipe_tower_corners(bool check_wipe_tower_existance=true) const;
 
-    // SnapOrka: IDEX/multi-physical-extruder printers (U1, J1, A350-Dual, Artisan-Dual) don't need a prime
-    // tower as overflow target for filament changes — toolchange = move to other parked hotend, only ~1-3mm³
-    // ooze cleanup needed, fits in any layer's infill. Prime tower is only structurally required when using
-    // single-extruder MMU/AMS where 50-100mm³ of purge per change might overflow available infill.
-    bool needs_prime_tower_for_wiping() const { return m_config.single_extruder_multi_material.value; }
-
     //SoftFever
     bool &is_BBL_printer() { return m_isBBLPrinter; }
     const bool is_BBL_printer() const { return m_isBBLPrinter; }
@@ -1100,7 +1094,13 @@ private:
     PrintRegionPtrs                         m_print_regions;
     
     //SoftFever
-    bool m_isBBLPrinter;
+    // SnapOrka: default-initialize to false. Was previously left uninitialized — under release-optimized
+    // builds this could read as garbage (often non-zero on stack/heap reuse), making is_BBL_printer()
+    // return true for non-BBL printers like Snapmaker U1 if Print::process ran before
+    // BackgroundSlicingProcess explicitly assigned it. That misrouted _make_wipe_tower into the
+    // BBL-only WipeTower constructor (line ~2816) which crashed on Vec2f(wipe_tower_x.get_at(N), ...)
+    // with bad/empty plate-indexed config arrays.
+    bool m_isBBLPrinter = false;
 
     // Ordered collections of extrusion paths to build skirt loops and brim.
     ExtrusionEntityCollection               m_skirt;

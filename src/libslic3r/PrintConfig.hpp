@@ -1157,9 +1157,12 @@ PRINT_CONFIG_CLASS_DEFINE(
 PRINT_CONFIG_CLASS_DEFINE(
     GCodeConfig,
 
-    ((ConfigOptionString,              before_layer_change_gcode)) 
-    ((ConfigOptionString,              printing_by_object_gcode)) 
+    ((ConfigOptionString,              before_layer_change_gcode))
+    ((ConfigOptionString,              printing_by_object_gcode))
     ((ConfigOptionFloats,              deretraction_speed))
+    // SnapOrka: on layers with a filament/extruder change, schedule infill before perimeters
+    // so the new color's first extrusion lands in non-visible infill (hides IDEX ooze drop).
+    ((ConfigOptionBool,                infill_first_after_color_change))
     //BBS
     ((ConfigOptionBool,                enable_arc_fitting))
     ((ConfigOptionString,              machine_end_gcode))
