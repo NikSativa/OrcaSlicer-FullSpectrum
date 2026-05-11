@@ -54,10 +54,7 @@
         "2"
     ],
     "enable_pressure_advance": [
-        "1"
-    ],
-    "pressure_advance": [
-        "0.04"
+        "0"
     ],
     "required_nozzle_HRC": [
         "3"
@@ -75,10 +72,10 @@
         "0.95"
     ],
     "nozzle_temperature": [
-        "245"
+        "240"
     ],
     "nozzle_temperature_initial_layer": [
-        "250"
+        "245"
     ],
     "nozzle_temperature_range_low": [
         "230"
@@ -114,40 +111,31 @@
         "0"
     ],
     "fan_min_speed": [
-        "40"
+        "20"
     ],
     "fan_max_speed": [
-        "80"
+        "50"
     ],
     "overhang_fan_speed": [
         "100"
     ],
     "overhang_fan_threshold": [
-        "10%"
+        "25%"
     ],
     "fan_cooling_layer_time": [
-        "50"
-    ],
-    "slow_down_layer_time": [
         "30"
     ],
-    "slow_down_min_speed": [
-        "10"
-    ],
-    "close_fan_the_first_x_layers": [
-        "1"
-    ],
-    "full_fan_speed_layer": [
-        "3"
+    "slow_down_layer_time": [
+        "8"
     ],
     "filament_retraction_length": [
-        "2.5"
+        "1.4"
     ],
     "filament_retraction_speed": [
-        "50"
+        "35"
     ],
     "filament_deretraction_speed": [
-        "50"
+        "35"
     ],
     "filament_z_hop": [
         "0.4"
