@@ -1,6 +1,6 @@
 {
   "name": "Snapmaker",
-  "version": "02.02.48.05",
+  "version": "02.02.48.06",
   "force_update": "0",
   "description": "Snapmaker configurations",
   "machine_model_list": [
@@ -189,10 +189,6 @@
     {
       "name": "0.20 Standard @Snapmaker U1 (0.4 nozzle)",
       "sub_path": "process/0.20 Standard @Snapmaker U1 (0.4 nozzle).json"
-    },
-    {
-      "name": "0.20 TPU @Snapmaker U1 (0.4 nozzle)",
-      "sub_path": "process/0.20 TPU @Snapmaker U1 (0.4 nozzle).json"
     },
     {
       "name": "0.08 Extra Fine @Snapmaker U1 (0.4 nozzle)",
