@@ -1,6 +1,6 @@
 {
   "name": "Snapmaker",
-  "version": "02.02.48.06",
+  "version": "02.02.48.07",
   "force_update": "0",
   "description": "Snapmaker configurations",
   "machine_model_list": [
@@ -1355,22 +1355,6 @@
     {
       "name": "Snapmaker TPU 95A @U1 base",
       "sub_path": "filament/Snapmaker TPU 95A @U1 base.json"
-    },
-    {
-      "name": "Creality TPU CR @Snapmaker U1 base",
-      "sub_path": "filament/Creality TPU CR @Snapmaker U1 base.json"
-    },
-    {
-      "name": "Creality TPU CR @Snapmaker U1 (0.4 nozzle)",
-      "sub_path": "filament/Creality TPU CR @Snapmaker U1 (0.4 nozzle).json"
-    },
-    {
-      "name": "Creality TPU CR @Snapmaker U1 (0.6 nozzle)",
-      "sub_path": "filament/Creality TPU CR @Snapmaker U1 (0.6 nozzle).json"
-    },
-    {
-      "name": "Creality TPU CR @Snapmaker U1 (0.8 nozzle)",
-      "sub_path": "filament/Creality TPU CR @Snapmaker U1 (0.8 nozzle).json"
     },
     {
       "name": "Polymaker PLA @U1 base",
