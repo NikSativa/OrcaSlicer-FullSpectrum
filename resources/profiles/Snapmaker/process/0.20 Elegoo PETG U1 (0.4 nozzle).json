@@ -1,0 +1,27 @@
+{
+    "type": "process",
+    "name": "0.20 Elegoo PETG U1 (0.4 nozzle)",
+    "inherits": "0.20 Standard @Snapmaker U1 (0.4 nozzle)",
+    "from": "system",
+    "setting_id": "GP004_ELEGOO_PETG",
+    "instantiation": "true",
+    "description": "Elegoo PETG tuning for U1: aggressive bridge (thin layer, slow speed, reduced flow/density) plus extended overhang slowdown. Targets small-object thermal collapse and bridge sag.",
+    "compatible_printers": [
+        "Snapmaker U1 (0.4 nozzle)"
+    ],
+    "thick_bridges": "0",
+    "bridge_speed": "20",
+    "bridge_flow": "0.7",
+    "bridge_density": "70%",
+    "internal_bridge_speed": "25",
+    "internal_bridge_flow": "0.85",
+    "overhang_1_4_speed": "30",
+    "overhang_2_4_speed": "20",
+    "overhang_3_4_speed": "15",
+    "overhang_4_4_speed": "10",
+    "enable_overhang_speed": "1",
+    "slowdown_for_curled_perimeters": "1",
+    "default_acceleration": "1500",
+    "outer_wall_acceleration": "1000",
+    "bridge_acceleration": "500"
+}
