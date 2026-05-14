@@ -9100,6 +9100,10 @@ struct Plater::priv
     // the project, builds a remap virtual_id → dominant physical_id, hands it to the existing
     // PresetBundle remap pipeline so painted facets are rewritten via on_filaments_change().
     void revert_mixed_filaments_to_dominant_physical();
+    // SnapOrka: same purge logic as revert_mixed_filaments_to_dominant_physical(), but without
+    // the on_filaments_change() and panel-update calls — for use mid-pipeline where the caller
+    // already triggers those. Idempotent when no mixed slots are active.
+    void purge_mixed_filaments_inline();
 
 
     bool need_update() const { return m_need_update; }
@@ -14579,6 +14583,7 @@ bool Plater::priv::confirm_auto_generated_gradients(wxWindow *parent, size_t num
         m_last_auto_gradient_prompt_physical_count = 0;
         m_last_auto_gradient_prompt_accepted = false;
         MixedFilamentManager::set_auto_generate_enabled(false);
+        purge_mixed_filaments_inline();
         return false;
     }
 
@@ -14598,6 +14603,8 @@ bool Plater::priv::confirm_auto_generated_gradients(wxWindow *parent, size_t num
 
     if (m_last_auto_gradient_prompt_physical_count == num_physical) {
         MixedFilamentManager::set_auto_generate_enabled(m_last_auto_gradient_prompt_accepted);
+        if (!m_last_auto_gradient_prompt_accepted)
+            purge_mixed_filaments_inline();
         return m_last_auto_gradient_prompt_accepted;
     }
 
@@ -14615,7 +14622,48 @@ bool Plater::priv::confirm_auto_generated_gradients(wxWindow *parent, size_t num
     m_last_auto_gradient_prompt_physical_count = num_physical;
     m_last_auto_gradient_prompt_accepted = accepted;
     MixedFilamentManager::set_auto_generate_enabled(accepted);
+    if (!accepted)
+        purge_mixed_filaments_inline();
     return accepted;
+}
+
+// SnapOrka: purge any existing mixed-filament state without invoking on_filaments_change()
+// or panel updates. Used in confirm_auto_generated_gradients() No-paths where the caller
+// already runs on_filaments_change() next — calling it here too would double-fire the remap
+// pipeline. Idempotent: early-returns when no mixed slots are active.
+void Plater::priv::purge_mixed_filaments_inline()
+{
+    auto *bundle = wxGetApp().preset_bundle;
+    if (bundle == nullptr)
+        return;
+    auto &mgr = bundle->mixed_filaments;
+    if (mgr.enabled_count() == 0)
+        return;
+
+    const size_t num_physical = bundle->filament_presets.size();
+    const std::vector<MixedFilament> old_rows = mgr.mixed_filaments();
+    const size_t old_total = num_physical + mgr.enabled_count();
+
+    std::vector<unsigned int> remap(old_total + 1, 0);
+    for (size_t i = 1; i <= num_physical; ++i)
+        remap[i] = static_cast<unsigned int>(i);
+    size_t virt_id = num_physical + 1;
+    for (const MixedFilament &row : old_rows) {
+        if (!row.enabled || row.deleted)
+            continue;
+        if (virt_id <= old_total) {
+            unsigned int dominant = row.dominant_physical_id();
+            if (dominant < 1 || dominant > num_physical)
+                dominant = 1;
+            remap[virt_id++] = dominant;
+        }
+    }
+
+    bundle->stash_filament_id_remap(std::move(remap));
+    mgr.clear_custom_entries();
+    bundle->project_config.set_key_value("mixed_filament_definitions", new ConfigOptionString(""));
+    bundle->project_config.set_key_value("enable_mixed_filaments", new ConfigOptionBool(false));
+    mgr.set_active(false);
 }
 
 void Plater::priv::set_auto_generated_gradient_decision(size_t num_physical, bool create_auto_gradients)
