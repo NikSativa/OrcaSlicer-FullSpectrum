@@ -1,6 +1,6 @@
 {
   "name": "Snapmaker",
-  "version": "02.02.48.07",
+  "version": "02.02.48.11",
   "force_update": "0",
   "description": "Snapmaker configurations",
   "machine_model_list": [
@@ -1443,6 +1443,22 @@
     {
       "name": "Snapmaker PETG HF @U1 0.8 nozzle",
       "sub_path": "filament/Snapmaker PETG HF @U1 0.8 nozzle.json"
+    },
+    {
+      "name": "Creality TPU U1",
+      "sub_path": "filament/Creality TPU U1.json"
+    },
+    {
+      "name": "Elegoo PETG U1",
+      "sub_path": "filament/Elegoo PETG U1.json"
+    },
+    {
+      "name": "Professional Lab TPU 95A U1",
+      "sub_path": "filament/Professional Lab TPU 95A U1.json"
+    },
+    {
+      "name": "Sunlu Silk PLA+ U1",
+      "sub_path": "filament/Sunlu Silk PLA+ U1.json"
     }
   ],
   "machine_list": [
