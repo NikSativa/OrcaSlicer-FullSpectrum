@@ -790,7 +790,7 @@ void split_solid_surface(size_t layer_id, const SurfaceFill &fill, ExPolygons &n
     }
 
     // Expand the normal infills a little bit to avoid gaps between normal and narrow infills
-    normal_infill = intersection_ex(offset_ex(normal_fill_areas_ex, scaled_spacing * 0.1), fill.expolygons);
+    normal_infill = intersection_ex(offset_ex(normal_fill_areas_ex, scaled_spacing * 0.5), fill.expolygons);
     narrow_infill = narrow_fill_areas;
 
 #ifdef DEBUG_SURFACE_SPLIT
