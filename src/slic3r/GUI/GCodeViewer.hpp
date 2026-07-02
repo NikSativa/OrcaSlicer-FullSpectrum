@@ -769,6 +769,7 @@ private:
     std::vector<EViewType> view_type_items;
     std::vector<std::string> view_type_items_str;
     int       m_view_type_sel = 0;
+    size_t    m_last_view_type_extruders_count = 0;
     EViewType m_view_type{ EViewType::FeatureType };
     std::vector<EMoveType> options_items;
 

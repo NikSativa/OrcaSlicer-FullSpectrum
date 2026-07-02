@@ -1046,8 +1046,7 @@ void GCodeViewer::load(const GCodeProcessorResult& gcode_result, const Print& pr
             m_time_estimate_mode = PrintEstimatedStatistics::ETimeMode::Normal;
     }
 
-    // set to color print by default if use multi extruders
-    if (m_extruder_ids.size() > 1) {
+    if (m_extruder_ids.size() > 1 && m_extruder_ids.size() != m_last_view_type_extruders_count) {
         for (int i = 0; i < view_type_items.size(); i++) {
             if (view_type_items[i] == EViewType::ColorPrint) {
                 m_view_type_sel = i;
@@ -1057,6 +1056,7 @@ void GCodeViewer::load(const GCodeProcessorResult& gcode_result, const Print& pr
 
         set_view_type(EViewType::ColorPrint);
     }
+    m_last_view_type_extruders_count = m_extruder_ids.size();
 
     bool only_gcode_3mf = false;
     PartPlate* current_plate = wxGetApp().plater()->get_partplate_list().get_curr_plate();
@@ -1220,6 +1220,7 @@ void GCodeViewer::reset()
     m_tools.m_tool_visibles = std::vector<bool>();
     m_extruders_count = 0;
     m_extruder_ids = std::vector<unsigned char>();
+    m_last_view_type_extruders_count = 0;
     m_filament_diameters = std::vector<float>();
     m_filament_densities = std::vector<float>();
     m_extrusions.reset_ranges();
