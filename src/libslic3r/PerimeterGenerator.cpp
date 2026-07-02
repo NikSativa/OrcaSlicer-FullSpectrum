@@ -1552,7 +1552,7 @@ void PerimeterGenerator::process_classic()
         // fill gaps
         if (! gaps.empty()) {
             // collapse 
-            double min = 0.2 * perimeter_width * (1 - INSET_OVERLAP_TOLERANCE);
+            double min = 0.2 * std::min(perimeter_width, ext_perimeter_width) * (1 - INSET_OVERLAP_TOLERANCE);
             double max = 2. * perimeter_spacing;
             ExPolygons gaps_ex = diff_ex(
                 //FIXME offset2 would be enough and cheaper.
