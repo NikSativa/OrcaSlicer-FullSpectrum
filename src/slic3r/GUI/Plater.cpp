@@ -1430,6 +1430,11 @@ Sidebar::Sidebar(Plater *parent)
         if (p->combos_filament.size() >= MAXIMUM_EXTRUDER_NUMBER)
             return;
 
+        if (p->m_panel_filament_content->GetMaxHeight() == 0) {
+            p->m_panel_filament_content->SetMaxSize({-1, -1});
+            scrolled_sizer->Layout();
+        }
+
         int filament_count = p->combos_filament.size() + 1;
         wxGetApp().plater()->confirm_auto_generated_gradients(filament_count);
         wxColour new_col = Plater::get_next_color_for_filament();
@@ -2070,6 +2075,9 @@ void Sidebar::update_all_preset_comboboxes(bool reload_printer_view)
 		p->m_staticText_filament_settings->SetLabel(_L("Filament"));
         p->m_filament_icon->SetBitmap_("filament");
     }
+
+    if (p->combos_filament.size() > 1)
+        p->m_staticText_filament_settings->SetLabel(p->m_staticText_filament_settings->GetLabel() + wxString::Format(" (%d)", (int)p->combos_filament.size()));
 
     show_SEMM_buttons(/*cfg.opt_bool("single_extruder_multi_material")*/true);
 
