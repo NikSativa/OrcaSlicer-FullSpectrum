@@ -293,6 +293,10 @@ void AppConfig::set_defaults()
         set_bool("auto_arrange", true);
     }
 
+    if (get("keep_painting").empty()) {
+        set_bool("keep_painting", false);
+    }
+
     if (get("show_model_mesh").empty()) {
         set_bool("show_model_mesh", false);
     }
