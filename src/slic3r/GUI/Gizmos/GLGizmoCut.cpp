@@ -3345,6 +3345,7 @@ void GLGizmoCut3D::perform_cut(const Selection& selection)
 
         wxBusyCursor wait;
 
+        const bool keep_painting = GUI::wxGetApp().app_config->get_bool("keep_painting");
         ModelObjectCutAttributes attributes = only_if(has_connectors ? true : m_keep_upper, ModelObjectCutAttribute::KeepUpper) |
                                               only_if(has_connectors ? true : m_keep_lower, ModelObjectCutAttribute::KeepLower) |
                                               only_if(has_connectors ? false : m_keep_as_parts, ModelObjectCutAttribute::KeepAsParts) |
@@ -3353,7 +3354,8 @@ void GLGizmoCut3D::perform_cut(const Selection& selection)
                                               only_if(m_rotate_upper, ModelObjectCutAttribute::FlipUpper) |
                                               only_if(m_rotate_lower, ModelObjectCutAttribute::FlipLower) |
                                               only_if(dowels_count > 0, ModelObjectCutAttribute::CreateDowels) |
-                                              only_if(!has_connectors && !cut_with_groove && cut_mo->cut_id.id().invalid(), ModelObjectCutAttribute::InvalidateCutInfo);
+                                              only_if(!has_connectors && !cut_with_groove && cut_mo->cut_id.id().invalid(), ModelObjectCutAttribute::InvalidateCutInfo) |
+                                              only_if(keep_painting, ModelObjectCutAttribute::KeepPaint);
 
         // update cut_id for the cut object in respect to the attributes
         update_object_cut_id(cut_mo->cut_id, attributes, dowels_count);

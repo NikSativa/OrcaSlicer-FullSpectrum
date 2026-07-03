@@ -4,14 +4,16 @@
 #include "enum_bitmask.hpp"
 #include "Point.hpp"
 #include "Model.hpp"
+#include "TriangleSelector.hpp"
 
+#include <optional>
 #include <vector>
 
 namespace Slic3r {
 
 using ModelObjectPtrs = std::vector<ModelObject*>;
 
-enum class ModelObjectCutAttribute : int { KeepUpper, KeepLower, KeepAsParts, FlipUpper, FlipLower, PlaceOnCutUpper, PlaceOnCutLower, CreateDowels, InvalidateCutInfo };
+enum class ModelObjectCutAttribute : int { KeepUpper, KeepLower, KeepAsParts, FlipUpper, FlipLower, PlaceOnCutUpper, PlaceOnCutLower, CreateDowels, InvalidateCutInfo, KeepPaint };
 using ModelObjectCutAttributes = enum_bitmask<ModelObjectCutAttribute>;
 ENABLE_ENUM_BITMASK_OPERATORS(ModelObjectCutAttribute);
 
@@ -25,7 +27,7 @@ class Cut {
 
     void post_process(ModelObject* object, ModelObjectPtrs& objects, bool keep, bool place_on_cut, bool flip);
     void post_process(ModelObject* upper_object, ModelObject* lower_object, ModelObjectPtrs& objects);
-    void finalize(const ModelObjectPtrs& objects);
+    void finalize(const ModelObjectPtrs& objects, const std::vector<std::optional<TriangleSelector::SavedPainting>>& saved_paintings);
 
 public:
 
