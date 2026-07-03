@@ -556,10 +556,24 @@ MeshErrorsInfo ObjectList::get_mesh_errors_info(const int obj_idx, const int vol
         tooltip += auto_repaired_info + "\n";
     }
     if (!stats.manifold()) {
-        remaining_info = format_wxstr(_L_PLURAL("Error: %1$d non-manifold edge.", "Error: %1$d non-manifold edges.", stats.open_edges), stats.open_edges);
+        size_t non_manifold_count = 0;
+        if (vol_idx == -1) {
+            for (const ModelVolume* v : (*m_objects)[obj_idx]->volumes)
+                if (v->is_model_part())
+                    non_manifold_count += its_num_non_manifold_edges(v->mesh().its);
+        } else {
+            non_manifold_count = its_num_non_manifold_edges((*m_objects)[obj_idx]->volumes[vol_idx]->mesh().its);
+        }
 
-        tooltip += _L("Remaining errors") + ":\n";
-        tooltip += "\t" + format_wxstr(_L_PLURAL("%1$d non-manifold edge", "%1$d non-manifold edges", stats.open_edges), stats.open_edges) + "\n";
+        if (non_manifold_count > 0) {
+            remaining_info = format_wxstr(_L_PLURAL("Error: %1$d non-manifold edge.", "Error: %1$d non-manifold edges.", (int)non_manifold_count), (int)non_manifold_count);
+            tooltip += _L("Remaining errors") + ":\n";
+            tooltip += "\t" + format_wxstr(_L_PLURAL("%1$d non-manifold edge", "%1$d non-manifold edges", (int)non_manifold_count), (int)non_manifold_count) + "\n";
+        } else {
+            remaining_info = format_wxstr(_L_PLURAL("%1$d open edge.", "%1$d open edges.", stats.open_edges), stats.open_edges);
+            tooltip += _L("Remaining errors") + ":\n";
+            tooltip += "\t" + format_wxstr(_L_PLURAL("%1$d open edge", "%1$d open edges", stats.open_edges), stats.open_edges) + "\n";
+        }
     }
 
     if (sidebar_info) {

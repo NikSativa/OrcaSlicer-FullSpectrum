@@ -232,6 +232,8 @@ bool its_is_splittable(const indexed_triangle_set &its, const std::vector<Vec3i3
 size_t its_num_open_edges(const indexed_triangle_set &its);
 size_t its_num_open_edges(const std::vector<Vec3i32> &face_neighbors);
 
+size_t its_num_non_manifold_edges(const indexed_triangle_set &its);
+
 // Shrink the vectors of its.vertices and its.faces to a minimum size by reallocating the two vectors.
 void its_shrink_to_fit(indexed_triangle_set &its);
 

@@ -1537,6 +1537,32 @@ size_t its_num_open_edges(const indexed_triangle_set &its)
     return its_num_open_edges(its_face_neighbors(its));
 }
 
+size_t its_num_non_manifold_edges(const indexed_triangle_set &its)
+{
+    std::vector<uint64_t> edges;
+    edges.reserve(its.indices.size() * 3);
+    auto push_edge = [&edges](int a, int b) {
+        if (a > b) { int t = a; a = b; b = t; }
+        edges.push_back((uint64_t(uint32_t(a)) << 32) | uint32_t(b));
+    };
+    for (const stl_triangle_vertex_indices &f : its.indices) {
+        push_edge(f[0], f[1]);
+        push_edge(f[1], f[2]);
+        push_edge(f[2], f[0]);
+    }
+    std::sort(edges.begin(), edges.end());
+    size_t num_non_manifold = 0;
+    for (size_t i = 0; i < edges.size();) {
+        size_t j = i + 1;
+        while (j < edges.size() && edges[j] == edges[i])
+            ++j;
+        if (j - i > 2)
+            ++num_non_manifold;
+        i = j;
+    }
+    return num_non_manifold;
+}
+
 void VertexFaceIndex::create(const indexed_triangle_set &its)
 {
     m_vertex_to_face_start.assign(its.vertices.size() + 1, 0);
