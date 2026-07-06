@@ -48,7 +48,7 @@
         "50"
     ],
     "eng_plate_temp": [
-        "80"
+        "70"
     ],
     "eng_plate_temp_initial_layer": [
         "80"
@@ -222,7 +222,7 @@
         "14"
     ],
     "hot_plate_temp": [
-        "80"
+        "70"
     ],
     "hot_plate_temp_initial_layer": [
         "80"
@@ -297,7 +297,7 @@
         "178"
     ],
     "textured_plate_temp": [
-        "80"
+        "70"
     ],
     "textured_plate_temp_initial_layer": [
         "80"
