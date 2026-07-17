@@ -1771,6 +1771,9 @@ void Selection::notify_instance_update(int object_idx, int instance_idx)
             //-1 means all the instance in this object
             if (instance_idx == -1)
             {
+                if (obj_index >= 1000)
+                    continue;
+
                 ModelObject* object = m_model->objects[obj_index];
 
                 for (int instance_index = 0; instance_index < object->instances.size(); instance_index++)
