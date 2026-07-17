@@ -1625,6 +1625,9 @@ void Tab::on_value_change(const std::string& opt_key, const boost::any& value)
                 field->set_value(boost::any(false), false);
             update_dirty();
         }
+
+        if (auto* plater = wxGetApp().plater())
+            plater->notify_vhl_dithering_conflict(local_z_enabled);
     }
 
 
