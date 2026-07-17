@@ -22016,6 +22016,9 @@ int Plater::delete_plate(int plate_index)
         index = p->partplate_list.get_curr_plate_index();
 
     take_snapshot("delete partplate");
+
+    p->background_process.set_fff_print(nullptr);
+
     ret = p->partplate_list.delete_plate(index);
 
     //BBS: update the current print to the current plate
