@@ -1422,6 +1422,7 @@ void WipeTower2::set_extruder(size_t idx, const PrintConfig& config)
         // rounding issues with small volumes and high flow).
         m_filpar[idx].ramming_speed.push_back(flow);
         m_filpar[idx].multitool_ramming_time = flow > 0.f ? vol / flow : 0.f;
+        m_filpar[idx].multitool_ramming_volume = vol;
     }
 
     m_used_filament_length.resize(
@@ -2333,8 +2334,11 @@ void WipeTower2::plan_toolchange(float z_par, float layer_height_par, unsigned i
 
     // this is an actual toolchange - let's calculate depth to reserve on the wipe tower
     float width             = m_wipe_tower_width - 3 * m_perimeter_width;
-    float length_to_extrude = volume_to_length(0.25f * std::accumulate(m_filpar[old_tool].ramming_speed.begin(),
-                                                                       m_filpar[old_tool].ramming_speed.end(), 0.f),
+    // Orca: for non-SEMM multi-toolhead ramming_speed holds flow, not speed, so 0.25 * sum is not a volume.
+    float ramming_volume    = m_semm ? 0.25f * std::accumulate(m_filpar[old_tool].ramming_speed.begin(),
+                                                               m_filpar[old_tool].ramming_speed.end(), 0.f)
+                                     : m_filpar[old_tool].multitool_ramming_volume;
+    float length_to_extrude = volume_to_length(ramming_volume,
                                                m_perimeter_width * m_filpar[old_tool].ramming_line_width_multiplicator, layer_height_par);
     // Orca: Set ramming depth to 0 if ramming is disabled.
     float ramming_depth   = m_enable_filament_ramming ? ((int(length_to_extrude / width) + 1) *
@@ -2366,8 +2370,11 @@ void WipeTower2::plan_local_z_toolchange(float z_par, float layer_height_par, un
         return;
 
     float width             = m_wipe_tower_width - 3 * m_perimeter_width;
-    float length_to_extrude = volume_to_length(0.25f * std::accumulate(m_filpar[old_tool].ramming_speed.begin(),
-                                                                       m_filpar[old_tool].ramming_speed.end(), 0.f),
+    // Orca: for non-SEMM multi-toolhead ramming_speed holds flow, not speed, so 0.25 * sum is not a volume.
+    float ramming_volume    = m_semm ? 0.25f * std::accumulate(m_filpar[old_tool].ramming_speed.begin(),
+                                                               m_filpar[old_tool].ramming_speed.end(), 0.f)
+                                     : m_filpar[old_tool].multitool_ramming_volume;
+    float length_to_extrude = volume_to_length(ramming_volume,
                                                m_perimeter_width * m_filpar[old_tool].ramming_line_width_multiplicator, layer_height_par);
     float ramming_depth     = m_enable_filament_ramming ? ((int(length_to_extrude / width) + 1) *
                                                        (m_perimeter_width * m_filpar[old_tool].ramming_line_width_multiplicator *
@@ -2415,7 +2422,10 @@ void WipeTower2::plan_local_z_reserve(float z_par, float layer_height_par, size_
             if (line_width <= WT_EPSILON || line_step <= WT_EPSILON)
                 continue;
 
-            const float ramming_volume = 0.25f * std::accumulate(filament.ramming_speed.begin(), filament.ramming_speed.end(), 0.f);
+            // Orca: for non-SEMM multi-toolhead ramming_speed holds flow, not speed, so 0.25 * sum is not a volume.
+            const float ramming_volume = m_semm ? 0.25f * std::accumulate(filament.ramming_speed.begin(),
+                                                                          filament.ramming_speed.end(), 0.f)
+                                                : filament.multitool_ramming_volume;
             const float length_to_extrude = volume_to_length(ramming_volume, line_width, layer_height_par);
             const float ramming_depth =
                 (float(int(length_to_extrude / wipe_width) + 1) * line_step);

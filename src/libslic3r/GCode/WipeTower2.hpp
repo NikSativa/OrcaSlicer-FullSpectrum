@@ -163,6 +163,7 @@ public:
         float               filament_area;
 		bool			    multitool_ramming;
 		float               multitool_ramming_time = 0.f;
+		float               multitool_ramming_volume = 0.f;
 		float               filament_minimal_purge_on_wipe_tower = 0.f;
         float               retract_length;
         float               retract_speed;
