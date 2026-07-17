@@ -1781,6 +1781,10 @@
       "sub_path": "filament/Snapmaker PETG Translucent @U1 0.8 nozzle.json"
     },
     {
+      "name": "Snapmaker PVA @U1",
+      "sub_path": "filament/Snapmaker PVA @U1.json"
+    },
+    {
       "name": "Snapmaker PVA @U1 0.6 nozzle",
       "sub_path": "filament/Snapmaker PVA @U1 0.6 nozzle.json"
     },
