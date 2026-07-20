@@ -56,6 +56,47 @@ namespace GUI {
 
 #define BORDER_W 10
 
+static std::string current_nozzle_diameter_suffix(const PresetBundle* preset_bundle)
+{
+    if (preset_bundle == nullptr)
+        return {};
+
+    const auto* nozzle_diameter = preset_bundle->printers.get_edited_preset().config.option<ConfigOptionFloats>("nozzle_diameter");
+    if (nozzle_diameter == nullptr || nozzle_diameter->values.empty())
+        return {};
+
+    std::string suffix = float_to_string_decimal_point(nozzle_diameter->values.front(), 2);
+    while (!suffix.empty() && suffix.back() == '0')
+        suffix.pop_back();
+    if (!suffix.empty() && suffix.back() == '.')
+        suffix.pop_back();
+
+    return suffix;
+}
+
+static std::deque<Preset>::const_iterator find_machine_filament_preset(const std::deque<Preset>& filaments,
+                                                                      const std::string&        filament_name,
+                                                                      const std::string&        nozzle_suffix)
+{
+    std::vector<std::string> candidates;
+    if (!nozzle_suffix.empty()) {
+        candidates.emplace_back(filament_name + " @U1 " + nozzle_suffix + " nozzle");
+        candidates.emplace_back(filament_name + " @U1 " + nozzle_suffix);
+    }
+    candidates.emplace_back(filament_name + " @U1");
+    candidates.emplace_back(filament_name + " U1");
+    candidates.emplace_back(filament_name);
+
+    for (const std::string& candidate : candidates) {
+        auto iter = std::find_if(filaments.begin(), filaments.end(),
+                                 [&candidate](const Preset& preset) { return preset.name == candidate && preset.is_compatible; });
+        if (iter != filaments.end())
+            return iter;
+    }
+
+    return filaments.end();
+}
+
 // ---------------------------------
 // ***  PresetComboBox  ***
 // ---------------------------------
@@ -1149,20 +1190,14 @@ void PlaterPresetComboBox::update()
         auto& machine_filaments = wxGetApp().preset_bundle->machine_filaments;
         m_first_ams_filament          = GetCount();
 
+        const std::string nozzle_suffix = current_nozzle_diameter_suffix(m_preset_bundle);
+
         size_t count = 0;
 
         for (auto iter = machine_filaments.begin(); iter != machine_filaments.end();) {
             std::string filament_name = iter->second.first;
 
-            // First match: exact name + compatibility check
-            auto item_iter = std::find_if(filaments.begin(), filaments.end(),
-                                     [&filament_name, this](auto& f) { return f.name == filament_name && f.is_compatible; });
-
-            // Second match: if first fails, try with @U1 suffix + compatibility check
-            if (item_iter == filaments.end()) {
-                item_iter = std::find_if(filaments.begin(), filaments.end(),
-                                    [&filament_name, this](auto& f) { return f.name == filament_name + " @U1" && f.is_compatible; });
-            }
+            auto item_iter = find_machine_filament_preset(filaments, filament_name, nozzle_suffix);
 
             if (item_iter != filaments.end()) {
                 const_cast<Preset&>(*item_iter).is_visible = true;
@@ -1723,20 +1758,14 @@ void TabPresetComboBox::update()
         auto& machine_filaments = wxGetApp().preset_bundle->machine_filaments;
         m_first_ams_filament    = GetCount();
 
+        const std::string nozzle_suffix = current_nozzle_diameter_suffix(m_preset_bundle);
+
         size_t count = 0;
 
         for (auto iter = machine_filaments.begin(); iter != machine_filaments.end();) {
             std::string filament_name = iter->second.first;
 
-            // First match: exact name + compatibility check
-            auto item_iter = std::find_if(filaments.begin(), filaments.end(),
-                                             [&filament_name, this](auto& f) { return f.name == filament_name && f.is_compatible; });
-
-            // Second match: if first fails, try with @U1 suffix + compatibility check
-            if (item_iter == filaments.end()) {
-                item_iter = std::find_if(filaments.begin(), filaments.end(),
-                                         [&filament_name, this](auto& f) { return f.name == filament_name + " @U1" && f.is_compatible; });
-            }
+            auto item_iter = find_machine_filament_preset(filaments, filament_name, nozzle_suffix);
 
             if (item_iter != filaments.end()) {
                 const_cast<Preset&>(*item_iter).is_visible = true;
