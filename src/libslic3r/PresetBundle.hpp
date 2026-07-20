@@ -5,10 +5,12 @@
 #include "AppConfig.hpp"
 #include "enum_bitmask.hpp"
 #include "MixedFilament.hpp"
+#include "FilamentColorLibrary.hpp"
 
 #include <memory>
 #include <unordered_map>
 #include <array>
+#include <vector>
 #include <boost/filesystem/path.hpp>
 
 #define DEFAULT_USER_FOLDER_NAME "default"
@@ -27,6 +29,18 @@ enum class VendorType {
     Marlin,
     Marlin_BBL
 };
+
+struct ConnectMachineInfo
+{
+    std::string filament_info {""};
+    std::string filament_type {""};
+    std::string nozzle_info {""};
+    std::string color_info {""};
+    std::vector<std::string> multiColors;
+    Slic3r::FilamentColorMode colorMode { Slic3r::FilamentColorMode::Segment };
+    int index {0};
+};
+
 namespace Slic3r {
 
 // Bundle of Print + Filament + Printer presets.
@@ -159,6 +173,7 @@ public:
 
     // Snapmaker
     std::map<int, std::pair<std::string, std::string>> machine_filaments;
+    std::vector<ConnectMachineInfo>                    m_connect_machine_info_list;
 
     // Calibrate
     Preset const * calibrate_printer = nullptr;

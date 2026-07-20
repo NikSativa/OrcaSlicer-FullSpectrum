@@ -1503,6 +1503,7 @@ void SSWCP_Instance::update_filament_info(const json& objects, bool send_message
 
             // 存储耗材，并触发更新
             auto& filaments = wxGetApp().preset_bundle->machine_filaments;
+            auto& machine_nozzles = wxGetApp().preset_bundle->m_connect_machine_info_list;
             static auto tmp_filaments = filaments;
 
             if (m_first_connected) {
@@ -1511,6 +1512,7 @@ void SSWCP_Instance::update_filament_info(const json& objects, bool send_message
             }
 
             filaments.clear();
+            machine_nozzles.clear();
 
             size_t count = 0;
             for (size_t i = 0; i < j_value["filament_official"].size(); ++i) {
@@ -1531,24 +1533,32 @@ void SSWCP_Instance::update_filament_info(const json& objects, bool send_message
 
                     int extruder = j_value["extruder_map_table"][i].get<int>();
 
+                    std::string str_color;
                     if (j_value.count("filament_color_rgba") && j_value["filament_color_rgba"].is_array() &&
                         j_value["filament_color_rgba"].size() != 0) {
-                        std::string str_color = "#" + j_value["filament_color_rgba"][i].get<std::string>();
-                        filaments.insert({int(i), {name, str_color}});
-                    } else {
-                        if (j_value["filament_color"][i].is_number()) {
-                            int                color = j_value["filament_color"][i].get<int>();
-                            std::ostringstream oss;
-                            oss << "#" << std::uppercase << std::setfill('0') << std::setw(6) << std::hex
-                                << (color & 0x00FFFFFF); // 仅取低24位
+                        str_color = "#" + j_value["filament_color_rgba"][i].get<std::string>();
+                    } else if (j_value["filament_color"][i].is_number()) {
+                        int                color = j_value["filament_color"][i].get<int>();
+                        std::ostringstream oss;
+                        oss << "#" << std::uppercase << std::setfill('0') << std::setw(6) << std::hex
+                            << (color & 0x00FFFFFF); // 仅取低24位
 
-                            std::string str_color = oss.str();
-                            filaments.insert({int(i), {name, str_color}});
-                        } else {
-                            std::string str_color = "#" + j_value["filament_color"][i].get<std::string>();
-                            filaments.insert({int(i), {name, str_color}});
-                        }
+                        str_color = oss.str();
+                    } else {
+                        str_color = "#" + j_value["filament_color"][i].get<std::string>();
                     }
+
+                    filaments.insert({int(i), {name, str_color}});
+
+                    ConnectMachineInfo machineData;
+                    machineData.index         = static_cast<int>(i);
+                    machineData.filament_info = name;
+                    machineData.filament_type = type;
+                    machineData.color_info    = Slic3r::NormalizeFilamentHexColor(str_color, "#FFFFFF");
+                    if (j_value.count("nozzle_diameters") && j_value["nozzle_diameters"].is_array() &&
+                        j_value["nozzle_diameters"].size() > i)
+                        machineData.nozzle_info = j_value["nozzle_diameters"][i].get<std::string>();
+                    machine_nozzles.push_back(machineData);
                 }
             }
 
@@ -4136,6 +4146,7 @@ void SSWCP_MachineConnect_Instance::sw_disconnect() {
 
             wxGetApp().app_config->clear_filament_extruder_map();
             wxGetApp().preset_bundle->machine_filaments.clear();
+            wxGetApp().preset_bundle->m_connect_machine_info_list.clear();
             wxGetApp().load_current_presets();
         });
 
@@ -5488,6 +5499,7 @@ void SSWCP_MqttAgent_Instance::sw_mqtt_set_engine()
                                     SSWCP_Instance::m_first_connected = true;
                                     wxGetApp().app_config->clear_filament_extruder_map();
                                     wxGetApp().preset_bundle->machine_filaments.clear();
+                                    wxGetApp().preset_bundle->m_connect_machine_info_list.clear();
                                     wxGetApp().load_current_presets();
                                 });
                                 wxGetApp().CallAfter([]() {
