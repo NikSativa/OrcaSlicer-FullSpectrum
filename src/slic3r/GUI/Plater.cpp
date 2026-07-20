@@ -154,6 +154,7 @@
 #include "Widgets/CheckBox.hpp"
 #include "Widgets/Button.hpp"
 #include "Widgets/SwitchButton.hpp"
+#include "filamentsync/SyncFilamentColorDialog.hpp"
 
 #include "GUI_ObjectTable.hpp"
 #include "libslic3r/Thread.hpp"
@@ -196,6 +197,99 @@ static const std::pair<unsigned int, unsigned int> THUMBNAIL_SIZE_3MF = { 512, 5
 
 namespace Slic3r {
 namespace GUI {
+
+namespace {
+
+std::string extract_base_filament_name(const std::string& full_name)
+{
+    std::string base = full_name;
+    size_t at_pos = base.find('@');
+    if (at_pos != std::string::npos) {
+        base = base.substr(0, at_pos);
+        base.erase(0, base.find_first_not_of(" \t\n\r"));
+        base.erase(base.find_last_not_of(" \t\n\r") + 1);
+    }
+    return base;
+}
+
+std::string machine_nozzle_suffix(PresetBundle* preset_bundle, const std::string& nozzle_info)
+{
+    std::string suffix = nozzle_info;
+    const size_t mm_pos = suffix.find("mm");
+    if (mm_pos != std::string::npos)
+        suffix.erase(mm_pos);
+    suffix.erase(0, suffix.find_first_not_of(" \t"));
+    if (!suffix.empty())
+        suffix.erase(suffix.find_last_not_of(" \t") + 1);
+    if (!suffix.empty())
+        return suffix;
+
+    const auto* nozzle_diameter = preset_bundle->printers.get_edited_preset().config.option<ConfigOptionFloats>("nozzle_diameter");
+    if (nozzle_diameter == nullptr || nozzle_diameter->values.empty())
+        return {};
+
+    suffix = float_to_string_decimal_point(nozzle_diameter->values.front(), 2);
+    while (!suffix.empty() && suffix.back() == '0')
+        suffix.pop_back();
+    if (!suffix.empty() && suffix.back() == '.')
+        suffix.pop_back();
+    return suffix;
+}
+
+// Resolve a machine filament name to a local preset. SnapOrka-named presets ("Elegoo PETG U1") are
+// tried first and may be non-system, so a user preset wins over the upstream generic fallback.
+Preset* resolve_filament_preset(PresetBundle*      preset_bundle,
+                                const std::string& filament_name,
+                                const std::string& filament_type,
+                                const std::string& nozzle_info)
+{
+    if (!preset_bundle || filament_name.empty())
+        return nullptr;
+
+    auto to_lower = [](std::string s) {
+        std::transform(s.begin(), s.end(), s.begin(), ::tolower);
+        return s;
+    };
+
+    const std::string nozzle_suffix = machine_nozzle_suffix(preset_bundle, nozzle_info);
+
+    std::vector<std::string> candidates;
+    if (!nozzle_suffix.empty()) {
+        candidates.emplace_back(filament_name + " @U1 " + nozzle_suffix + " nozzle");
+        candidates.emplace_back(filament_name + " @U1 " + nozzle_suffix);
+    }
+    candidates.emplace_back(filament_name + " @U1");
+    candidates.emplace_back(filament_name + " U1");
+    candidates.emplace_back(filament_name);
+
+    for (const std::string& candidate : candidates)
+        for (auto& preset : preset_bundle->filaments)
+            if (preset.is_compatible && preset.name == candidate)
+                return &preset;
+
+    for (auto& preset : preset_bundle->filaments) {
+        if (!preset.is_compatible || !preset.is_system)
+            continue;
+        if (to_lower(extract_base_filament_name(preset.name)) == to_lower(filament_name))
+            return &preset;
+    }
+
+    const std::string generic_base = "Generic " + filament_type;
+    for (auto& preset : preset_bundle->filaments) {
+        if (!preset.is_compatible || !preset.is_system)
+            continue;
+
+        const std::string base = extract_base_filament_name(preset.name);
+        const std::string type = preset.config.opt_string("filament_type", static_cast<unsigned int>(0));
+
+        if (to_lower(type) == to_lower(filament_type) && to_lower(base) == to_lower(generic_base))
+            return &preset;
+    }
+
+    return nullptr;
+}
+
+} // namespace
 
 wxDEFINE_EVENT(EVT_SCHEDULE_BACKGROUND_PROCESS,     SimpleEvent);
 wxDEFINE_EVENT(EVT_SLICING_UPDATE,                  SlicingStatusEvent);
@@ -692,6 +786,7 @@ struct Sidebar::priv
     ScalableButton *  m_bpButton_add_filament;
     ScalableButton *  m_bpButton_del_filament;
     ScalableButton *  m_bpButton_ams_filament;
+    ScalableButton *  m_bpButton_sync_filament = nullptr;
     ScalableButton *  m_bpButton_set_filament;
     SwitchButton *    m_btn_enable_mixed_filaments = nullptr;  // SnapOrka: master mixed-filament toggle in filament header
     int                         m_menu_filament_id = -1;
@@ -1490,6 +1585,16 @@ Sidebar::Sidebar(Plater *parent)
 
     bSizer39->Add(ams_btn, 0, wxALIGN_CENTER | wxLEFT, FromDIP(SidebarProps::IconSpacing()));
     //bSizer39->Add(FromDIP(10), 0, 0, 0, 0 );
+
+    ScalableButton* sync_filament_btn = new ScalableButton(p->m_panel_filament_title, wxID_ANY, "sync_filament", wxEmptyString,
+                                                           wxDefaultSize, wxDefaultPosition, wxBU_EXACTFIT | wxNO_BORDER, false, 16);
+    sync_filament_btn->SetToolTip(_L("Synchronize filaments from the printer"));
+    sync_filament_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent &e) {
+        sync_filament_from_machine();
+    });
+    p->m_bpButton_sync_filament = sync_filament_btn;
+
+    bSizer39->Add(sync_filament_btn, 0, wxALIGN_CENTER | wxLEFT, FromDIP(SidebarProps::IconSpacing()));
 
     ScalableButton* set_btn = new ScalableButton(p->m_panel_filament_title, wxID_ANY, "settings");
     set_btn->SetToolTip(_L("Set filaments to use"));
@@ -8335,6 +8440,95 @@ void Sidebar::load_ams_list(std::string const &device, MachineObject* obj)
 
     for (auto c : p->combos_filament)
         c->update();
+}
+
+void Sidebar::sync_filament_from_machine()
+{
+    PresetBundle* preset_bundle = wxGetApp().preset_bundle;
+    if (preset_bundle == nullptr)
+        return;
+
+    const auto& machine_list = preset_bundle->m_connect_machine_info_list;
+    if (machine_list.empty()) {
+        MessageDialog dlg(this, _L("No filaments detected on the printer. Connect the printer and try again."),
+                          _L("Synchronize Filament"), wxICON_INFORMATION | wxOK);
+        dlg.ShowModal();
+        return;
+    }
+
+    std::vector<FilamentData> machineDataList;
+    machineDataList.reserve(machine_list.size());
+    for (const ConnectMachineInfo& info : machine_list) {
+        FilamentData data;
+        data.m_index = static_cast<unsigned int>(info.index);
+        data.m_name  = info.filament_info;
+        data.m_type  = info.filament_type;
+        data.m_color = FilamentColor::FromColors(info.multiColors, info.colorMode, info.color_info);
+        machineDataList.push_back(data);
+    }
+
+    std::vector<FilamentData> designDataList;
+    const auto& filament_presets = preset_bundle->filament_presets;
+    ConfigOptionStrings* colours = preset_bundle->project_config.option<ConfigOptionStrings>("filament_colour");
+    for (size_t i = 0; i < filament_presets.size(); ++i) {
+        FilamentData data;
+        data.m_index = static_cast<unsigned int>(i);
+        data.m_name  = extract_base_filament_name(filament_presets[i]);
+        const Preset* preset = preset_bundle->filaments.find_preset(filament_presets[i], false);
+        if (preset != nullptr)
+            data.m_type = preset->config.opt_string("filament_type", static_cast<unsigned int>(0));
+        std::vector<std::string> single_colour;
+        if (colours != nullptr && i < colours->values.size())
+            single_colour.push_back(colours->values[i]);
+        data.m_color = FilamentColor::FromColors(single_colour, FilamentColorMode::Segment, "#FFFFFF");
+        designDataList.push_back(data);
+    }
+
+    SyncFilamentColorDialog dlg(this, designDataList, machineDataList);
+    dlg.setHasMixedFilaments(preset_bundle->mixed_filaments.enabled_count() > 0);
+    if (dlg.ShowModal() != wxID_OK)
+        return;
+
+    const std::vector<FilamentData> syncedData = dlg.getSyncDataList();
+    if (syncedData.empty())
+        return;
+
+    size_t effective_size = syncedData.size();
+    const size_t combo_size = p->combos_filament.size();
+    if (effective_size != combo_size) {
+        if (effective_size > combo_size &&
+            (effective_size > MAXIMUM_EXTRUDER_NUMBER ||
+             preset_bundle->mixed_filaments.total_filaments(effective_size) >= MAXIMUM_FILAMENT_NUMBER)) {
+            effective_size = combo_size;
+        }
+        if (effective_size != combo_size) {
+            wxColour    new_col   = Plater::get_next_color_for_filament();
+            std::string new_color = into_u8(new_col.GetAsString(wxC2S_HTML_SYNTAX));
+            preset_bundle->set_num_filaments(effective_size, new_color);
+
+            const auto& dlgRemap = dlg.getFilamentIdRemap();
+            if (!dlgRemap.empty())
+                preset_bundle->stash_filament_id_remap(dlgRemap);
+        }
+    }
+
+    ConfigOptionStrings* co = preset_bundle->project_config.option<ConfigOptionStrings>("filament_colour");
+    for (size_t i = 0; i < effective_size && i < syncedData.size(); ++i) {
+        const std::string nozzle_info = (i < machine_list.size()) ? machine_list[i].nozzle_info : std::string();
+        Preset* matched = resolve_filament_preset(preset_bundle, syncedData[i].m_name, syncedData[i].m_type, nozzle_info);
+        if (matched != nullptr)
+            preset_bundle->set_filament_preset(i, matched->name);
+
+        if (co != nullptr && i < co->values.size()) {
+            wxColour c    = getMainColor(syncedData[i].m_color);
+            co->values[i] = into_u8(c.GetAsString(wxC2S_HTML_SYNTAX));
+        }
+    }
+
+    wxGetApp().plater()->on_filaments_change(effective_size);
+    wxGetApp().get_tab(Preset::TYPE_PRINT)->update();
+    preset_bundle->export_selections(*wxGetApp().app_config);
+    auto_calc_flushing_volumes(-1);
 }
 
 void Sidebar::sync_ams_list()
