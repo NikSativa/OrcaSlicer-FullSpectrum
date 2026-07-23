@@ -3327,7 +3327,7 @@ void MainFrame::load_config_file()
             int           ids[]{wxID_NO, wxID_YES, wxID_NOTOALL, wxID_YESTOALL};
             return std::find(ids, ids + 4, res) - ids;
         },
-        ForwardCompatibilitySubstitutionRule::Enable);
+        ForwardCompatibilitySubstitutionRule::EnableSilent);
     if (!cfiles.empty()) {
         wxGetApp().app_config->update_config_dir(get_dir_name(cfiles.back()));
         wxGetApp().load_current_presets();
@@ -3352,7 +3352,7 @@ void MainFrame::load_config_file()
 bool MainFrame::load_config_file(const std::string &path)
 {
     try {
-        ConfigSubstitutions config_substitutions = wxGetApp().preset_bundle->load_config_file(path, ForwardCompatibilitySubstitutionRule::Enable);
+        ConfigSubstitutions config_substitutions = wxGetApp().preset_bundle->load_config_file(path, ForwardCompatibilitySubstitutionRule::EnableSilent);
         if (!config_substitutions.empty())
             show_substitutions_info(config_substitutions, path);
     } catch (const std::exception &ex) {

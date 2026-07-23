@@ -10415,7 +10415,7 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
                     // BBS: add part plate related logic
                     PlateDataPtrs             plate_data;
                     En3mfType                 en_3mf_file_type = En3mfType::From_BBS;
-                    ConfigSubstitutionContext config_substitutions{ForwardCompatibilitySubstitutionRule::Enable};
+                    ConfigSubstitutionContext config_substitutions{ForwardCompatibilitySubstitutionRule::EnableSilent};
                     std::vector<Preset *>     project_presets;
                     // BBS: backup & restore
                     q->skip_thumbnail_invalid = true;
@@ -10703,7 +10703,7 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
                         // load project embedded presets
                         PresetsConfigSubstitutions preset_substitutions;
                         PresetBundle &             preset_bundle = *wxGetApp().preset_bundle;
-                        preset_substitutions                     = preset_bundle.load_project_embedded_presets(project_presets, ForwardCompatibilitySubstitutionRule::Enable);
+                        preset_substitutions                     = preset_bundle.load_project_embedded_presets(project_presets, ForwardCompatibilitySubstitutionRule::EnableSilent);
                         if (!preset_substitutions.empty()) show_substitutions_info(preset_substitutions);
                     }
                     if (project_presets.size() > 0) {
@@ -11037,7 +11037,7 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
                     // load project embedded presets
                     PresetsConfigSubstitutions preset_substitutions;
                     PresetBundle &             preset_bundle = *wxGetApp().preset_bundle;
-                    preset_substitutions                     = preset_bundle.load_project_embedded_presets(project_presets, ForwardCompatibilitySubstitutionRule::Enable);
+                    preset_substitutions                     = preset_bundle.load_project_embedded_presets(project_presets, ForwardCompatibilitySubstitutionRule::EnableSilent);
                     if (!preset_substitutions.empty()) show_substitutions_info(preset_substitutions);
 
                     for (unsigned int i = 0; i < project_presets.size(); i++) { delete project_presets[i]; }
