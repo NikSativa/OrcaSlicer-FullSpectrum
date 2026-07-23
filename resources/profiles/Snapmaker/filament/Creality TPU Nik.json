@@ -1,6 +1,6 @@
 {
     "type": "filament",
-    "name": "Creality TPU U1",
+    "name": "Creality TPU Nik",
     "from": "system",
     "filament_vendor": [
         "Creality"
@@ -215,7 +215,6 @@
     "chamber_temperature": [
         "0"
     ],
-    "compatible_printers_condition": "",
     "compatible_prints": [],
     "compatible_prints_condition": "",
     "complete_print_exhaust_fan_speed": [
@@ -303,7 +302,10 @@
         "40"
     ],
     "compatible_printers": [
-        "Snapmaker U1 (0.4 nozzle)"
+        "Snapmaker U1 (0.4 nozzle)",
+        "Snapmaker U1 (0.2 nozzle)",
+        "Snapmaker U1 (0.6 nozzle)",
+        "Snapmaker U1 (0.8 nozzle)"
     ],
     "filament_id": "P_USER_CREALITY_TPU_U1_04",
     "instantiation": "true",

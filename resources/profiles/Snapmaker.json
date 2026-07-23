@@ -1813,20 +1813,20 @@
             "sub_path": "filament/Snapmaker Breakaway Support For PLA @U1.json"
         },
         {
-            "name": "Creality TPU U1",
-            "sub_path": "filament/Creality TPU U1.json"
+            "name": "Creality TPU Nik",
+            "sub_path": "filament/Creality TPU Nik.json"
         },
         {
-            "name": "Elegoo PETG U1",
-            "sub_path": "filament/Elegoo PETG U1.json"
+            "name": "Elegoo PETG Nik",
+            "sub_path": "filament/Elegoo PETG Nik.json"
         },
         {
-            "name": "Professional Lab TPU 95A U1",
-            "sub_path": "filament/Professional Lab TPU 95A U1.json"
+            "name": "Professional Lab TPU 95A Nik",
+            "sub_path": "filament/Professional Lab TPU 95A Nik.json"
         },
         {
-            "name": "Sunlu PLA Silk U1",
-            "sub_path": "filament/Sunlu PLA Silk U1.json"
+            "name": "Sunlu PLA Silk Nik",
+            "sub_path": "filament/Sunlu PLA Silk Nik.json"
         }
     ],
     "machine_list": [

@@ -1,8 +1,8 @@
 {
     "type": "filament",
-    "name": "Professional Lab TPU 95A U1",
+    "name": "Sunlu PLA Silk Nik",
     "from": "system",
-    "filament_id": "P_USER_PROFLAB_TPU_95A_U1",
+    "filament_id": "P_USER_SUNLU_SILK_PLAP_U1",
     "activate_air_filtration": [
         "0"
     ],
@@ -13,16 +13,16 @@
         "0"
     ],
     "close_fan_the_first_x_layers": [
-        "3"
+        "1"
     ],
     "complete_print_exhaust_fan_speed": [
         "70"
     ],
     "cool_plate_temp": [
-        "30"
+        "35"
     ],
     "cool_plate_temp_initial_layer": [
-        "30"
+        "35"
     ],
     "counter_coef_1": [
         "0"
@@ -49,19 +49,19 @@
         "50"
     ],
     "eng_plate_temp": [
-        "30"
+        "60"
     ],
     "eng_plate_temp_initial_layer": [
-        "30"
+        "60"
     ],
     "fan_cooling_layer_time": [
-        "100"
+        "30"
     ],
     "fan_max_speed": [
-        "80"
+        "70"
     ],
     "fan_min_speed": [
-        "50"
+        "40"
     ],
     "filament_cooling_before_tower": [
         "0"
@@ -103,7 +103,7 @@
         "1.75"
     ],
     "filament_flow_ratio": [
-        "1.03"
+        "0.98"
     ],
     "filament_flush_temp": [
         "0"
@@ -121,7 +121,7 @@
         "nil"
     ],
     "filament_max_volumetric_speed": [
-        "5"
+        "8"
     ],
     "filament_ramming_volumetric_speed": [
         "-1"
@@ -151,28 +151,28 @@
         "nil"
     ],
     "filament_retraction_length": [
-        "2.0"
+        "1.5"
     ],
     "filament_retraction_minimum_travel": [
         "nil"
     ],
     "filament_retraction_speed": [
-        "35"
+        "40"
     ],
     "filament_soluble": [
         "0"
     ],
     "filament_type": [
-        "TPU"
+        "PLA"
     ],
     "filament_vendor": [
-        "Professional Lab"
+        "Sunlu"
     ],
     "filament_wipe": [
         "1"
     ],
     "filament_wipe_distance": [
-        "6"
+        "2"
     ],
     "filament_prime_volume": [
         "45"
@@ -187,7 +187,7 @@
         "Auto Lift"
     ],
     "full_fan_speed_layer": [
-        "5"
+        "0"
     ],
     "filament_extruder_variant": [
         "Direct Drive Standard"
@@ -199,7 +199,7 @@
         "10%"
     ],
     "filament_scarf_gap": [
-        "0%"
+        "15%"
     ],
     "filament_scarf_length": [
         "10"
@@ -223,10 +223,10 @@
         "14"
     ],
     "hot_plate_temp": [
-        "35"
+        "60"
     ],
     "hot_plate_temp_initial_layer": [
-        "35"
+        "60"
     ],
     "hole_coef_1": [
         "0"
@@ -244,28 +244,28 @@
         "0.22"
     ],
     "impact_strength_z": [
-        "10"
+        "10.0"
     ],
     "long_retractions_when_ec": [
         "0"
     ],
     "nozzle_temperature_range_low": [
-        "205"
+        "200"
     ],
     "nozzle_temperature_range_high": [
-        "235"
+        "230"
     ],
     "nozzle_temperature": [
-        "228"
+        "215"
     ],
     "nozzle_temperature_initial_layer": [
-        "232"
+        "220"
     ],
     "overhang_fan_speed": [
-        "100"
+        "90"
     ],
     "overhang_fan_threshold": [
-        "95%"
+        "25%"
     ],
     "reduce_fan_stop_start_freq": [
         "1"
@@ -277,10 +277,10 @@
         "0"
     ],
     "supertack_plate_temp": [
-        "0"
+        "45"
     ],
     "supertack_plate_temp_initial_layer": [
-        "0"
+        "45"
     ],
     "slow_down_for_layer_cooling": [
         "1"
@@ -289,19 +289,19 @@
         "0"
     ],
     "slow_down_layer_time": [
-        "20"
+        "8"
     ],
     "slow_down_min_speed": [
-        "15"
+        "10"
     ],
     "temperature_vitrification": [
-        "30"
+        "60"
     ],
     "textured_plate_temp": [
-        "35"
+        "60"
     ],
     "textured_plate_temp_initial_layer": [
-        "35"
+        "60"
     ],
     "filament_change_length": [
         "10"
@@ -310,7 +310,10 @@
         "1"
     ],
     "compatible_printers": [
-        "Snapmaker U1 (0.4 nozzle)"
+        "Snapmaker U1 (0.4 nozzle)",
+        "Snapmaker U1 (0.2 nozzle)",
+        "Snapmaker U1 (0.6 nozzle)",
+        "Snapmaker U1 (0.8 nozzle)"
     ],
     "filament_start_gcode": [
         ""
@@ -325,20 +328,32 @@
         "0 0 0 0 0 0"
     ],
     "filament_adhesiveness_category": [
-        "600"
+        "100"
+    ],
+    "enable_pressure_advance": [
+        "1"
     ],
     "filament_multitool_ramming": [
         "1"
     ],
     "filament_multitool_ramming_flow": [
-        "3.2"
+        "18"
     ],
     "filament_multitool_ramming_volume": [
-        "0.1"
+        "1"
     ],
     "filament_retract_length_toolchange": [
-        "6"
+        "10"
+    ],
+    "graphic_effect_plate_temp": [
+        "65"
+    ],
+    "graphic_effect_plate_temp_initial_layer": [
+        "65"
+    ],
+    "pressure_advance": [
+        "0.035"
     ],
     "instantiation": "true",
-    "setting_id": "GFUR_USER_PROFLAB_TPU_95A_U1"
+    "setting_id": "GFL_USER_SUNLU_SILK_PLA_U1"
 }
