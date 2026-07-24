@@ -81,10 +81,10 @@
         "2.0"
     ],
     "filament_z_hop": [
-        "0.4"
+        "nil"
     ],
     "filament_z_hop_types": [
-        "Auto Lift"
+        "nil"
     ],
     "filament_retract_restart_extra": [
         "nil"

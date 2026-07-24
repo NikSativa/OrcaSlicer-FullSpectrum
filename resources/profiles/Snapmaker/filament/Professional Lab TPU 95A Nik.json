@@ -181,10 +181,10 @@
         "60"
     ],
     "filament_z_hop": [
-        "0.4"
+        "nil"
     ],
     "filament_z_hop_types": [
-        "Auto Lift"
+        "nil"
     ],
     "full_fan_speed_layer": [
         "5"
@@ -277,10 +277,10 @@
         "0"
     ],
     "supertack_plate_temp": [
-        "0"
+        "35"
     ],
     "supertack_plate_temp_initial_layer": [
-        "0"
+        "35"
     ],
     "slow_down_for_layer_cooling": [
         "1"

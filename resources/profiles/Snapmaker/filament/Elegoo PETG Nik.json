@@ -180,10 +180,10 @@
         "60"
     ],
     "filament_z_hop": [
-        "0.4"
+        "nil"
     ],
     "filament_z_hop_types": [
-        "Auto Lift"
+        "nil"
     ],
     "full_fan_speed_layer": [
         "3"
