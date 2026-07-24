@@ -288,6 +288,8 @@ enum BedType {
     btPCT,
     btGESP,
     btSuperTack,
+    btCryoGlacier,
+    btCryoFrostbite,
     btCount
 };
 
@@ -426,6 +428,12 @@ static std::string get_bed_temp_key(const BedType type)
     if (type == btGESP)
         return "graphic_effect_plate_temp";
 
+    if (type == btCryoGlacier)
+        return "supertack_plate_temp";
+
+    if (type == btCryoFrostbite)
+        return "supertack_plate_temp";
+
     return "";
 }
 
@@ -451,6 +459,12 @@ static std::string get_bed_temp_1st_layer_key(const BedType type)
 
     if (type == btGESP)
         return "graphic_effect_plate_temp_initial_layer";
+
+    if (type == btCryoGlacier)
+        return "supertack_plate_temp_initial_layer";
+
+    if (type == btCryoFrostbite)
+        return "supertack_plate_temp_initial_layer";
 
     return "";
 }

@@ -2139,6 +2139,10 @@ static BambuBedType to_bambu_bed_type(BedType type)
         bambu_bed_type = bbtCoolPlate;
     else if (type == btSuperTack)
         bambu_bed_type = bbtSuperTackPlate;
+    else if (type == btCryoGlacier)
+        bambu_bed_type = bbtSuperTackPlate;
+    else if (type == btCryoFrostbite)
+        bambu_bed_type = bbtSuperTackPlate;
 
     return bambu_bed_type;
 }

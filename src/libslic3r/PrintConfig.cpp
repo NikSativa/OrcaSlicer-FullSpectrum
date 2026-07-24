@@ -395,6 +395,8 @@ static const t_config_enum_values s_keys_map_BedType = {
     { "Textured Cool Plate", btPCT },
     // Canonical name for btGESP (UI: "Graphic Effect Plate"). Keep legacy string so old projects/3MF still deserialize.
     { "Graphic Effect Plate", btGESP },
+    { "CryoGrip Glacier Plate", btCryoGlacier },
+    { "CryoGrip Frostbite Plate", btCryoFrostbite },
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(BedType)
 
@@ -888,6 +890,8 @@ void PrintConfigDef::init_fff_params()
     def->enum_values_ex.emplace_back("Textured Cool Plate");
     def->enum_values_ex.emplace_back("Supertack Plate");
     def->enum_values_ex.emplace_back("Graphic Effect Plate");
+    def->enum_values_ex.emplace_back("CryoGrip Glacier Plate");
+    def->enum_values_ex.emplace_back("CryoGrip Frostbite Plate");
     def->enum_labels_ex.emplace_back(L("Smooth Cool Plate"));
     def->enum_labels_ex.emplace_back(L("Engineering Plate"));
     def->enum_labels_ex.emplace_back(L("Smooth PEI Plate"));
@@ -895,6 +899,8 @@ void PrintConfigDef::init_fff_params()
     def->enum_labels_ex.emplace_back(L("Textured Cool Plate"));
     def->enum_labels_ex.emplace_back(L("Cool Plate (SuperTack)"));
     def->enum_labels_ex.emplace_back(L("Graphic Effect Plate"));
+    def->enum_labels_ex.emplace_back(L("CryoGrip Glacier"));
+    def->enum_labels_ex.emplace_back(L("CryoGrip Frostbite"));
     def->set_default_value(new ConfigOptionEnum<BedType>(btPC));
 
     // Orca: allow profile maker to set default bed type in machine profile
