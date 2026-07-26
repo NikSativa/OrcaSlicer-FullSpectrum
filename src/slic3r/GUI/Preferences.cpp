@@ -1325,12 +1325,6 @@ wxWindow* PreferencesDialog::create_general_page()
     auto title_downloads = create_item_title(_L("Downloads"), page, _L("Downloads"));
     auto item_downloads = create_item_downloads(page,50,"download_path");
 
-    //dark mode
-#ifdef _WIN32
-    auto title_darkmode = create_item_title(_L("Dark Mode"), page, _L("Dark Mode"));
-    auto item_darkmode = create_item_darkmode_checkbox(_L("Enable Dark mode"), page,_L("Enable dark mode"), 50, "dark_color_mode");
-#endif
-
     std::string enUrl = "https://www.snapmaker.com/privacy-policy";
     std::string cnUrl = "https://www.snapmaker.cn/privacy-policy";
     auto app_config   = wxGetApp().app_config;
@@ -1418,11 +1412,6 @@ wxWindow* PreferencesDialog::create_general_page()
 
     sizer_page->Add(title_downloads, 0, wxTOP| wxEXPAND, FromDIP(20));
     sizer_page->Add(item_downloads, 0, wxEXPAND, FromDIP(3));
-
-#ifdef _WIN32
-    sizer_page->Add(title_darkmode, 0, wxTOP | wxEXPAND, FromDIP(20));
-    sizer_page->Add(item_darkmode, 0, wxEXPAND, FromDIP(3));
-#endif
 
     sizer_page->Add(title_develop_mode, 0, wxTOP | wxEXPAND, FromDIP(20));
     sizer_page->Add(item_develop_mode, 0, wxTOP, FromDIP(3));

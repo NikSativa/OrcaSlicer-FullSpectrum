@@ -25,9 +25,14 @@ bool is_in_full_screen_mode = false;
 
 bool mac_dark_mode()
 {
-    NSString *style = [[NSUserDefaults standardUserDefaults] stringForKey:@"AppleInterfaceStyle"];
-    return style && [style isEqualToString:@"Dark"];
+    return false;
+}
 
+void set_mac_light_appearance()
+{
+    if (@available(macOS 10.14, *)) {
+        [NSApp setAppearance:[NSAppearance appearanceNamed:NSAppearanceNameAqua]];
+    }
 }
 
 double mac_max_scaling_factor()

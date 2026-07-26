@@ -14657,7 +14657,7 @@ void Plater::priv::show_preview_only_hint(wxCommandEvent &event)
 }
 
 void Plater::priv::on_apple_change_color_mode(wxSysColourChangedEvent& evt) {
-    m_is_dark = wxSystemSettings::GetAppearance().IsDark();
+    m_is_dark = wxGetApp().dark_mode();
     if (view3D->get_canvas3d() && view3D->get_canvas3d()->is_initialized()) {
         view3D->get_canvas3d()->on_change_color_mode(m_is_dark);
         preview->get_canvas3d()->on_change_color_mode(m_is_dark);

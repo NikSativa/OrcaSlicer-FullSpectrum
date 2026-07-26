@@ -240,6 +240,10 @@ void AppConfig::set_defaults()
 //#endif
 #endif // _WIN32
 
+#ifdef SUPPORT_DARK_MODE
+    set("dark_color_mode", "0");
+#endif
+
     // BBS
     /*if (get("3mf_include_gcode").empty())
         set_bool("3mf_include_gcode", true);*/

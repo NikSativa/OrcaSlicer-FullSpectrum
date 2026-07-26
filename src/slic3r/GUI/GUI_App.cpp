@@ -2559,6 +2559,10 @@ bool GUI_App::on_init_inner()
 #endif
     profiler.mark("wx init/log/image handlers");
 
+#if __APPLE__
+    set_mac_light_appearance();
+#endif
+
 #if defined(_WIN32) && ! defined(_WIN64)
     // BBS: remove 32bit build prompt
     // Win32 32bit build.
@@ -2570,6 +2574,7 @@ bool GUI_App::on_init_inner()
     // TODO: Find workaround for GTK4
 #if defined(__WXGTK20__) || defined(__WXGTK3__)
     g_object_set (gtk_settings_get_default (), "gtk-menu-images", TRUE, NULL);
+    g_object_set (gtk_settings_get_default (), "gtk-application-prefer-dark-theme", FALSE, NULL);
 #endif
 
 #ifdef WIN32
@@ -2669,8 +2674,7 @@ bool GUI_App::on_init_inner()
 #ifdef _MSW_DARK_MODE
 
 #ifndef __WINDOWS__
-    wxSystemAppearance app = wxSystemSettings::GetAppearance();
-    GUI::wxGetApp().app_config->set("dark_color_mode", app.IsDark() ? "1" : "0");
+    GUI::wxGetApp().app_config->set("dark_color_mode", "0");
     GUI::wxGetApp().app_config->save();
 #endif // __APPLE__
 
@@ -3360,22 +3364,7 @@ unsigned GUI_App::get_colour_approx_luma(const wxColour &colour)
 
 bool GUI_App::dark_mode()
 {
-#ifdef SUPPORT_DARK_MODE
-#if __APPLE__
-    // The check for dark mode returns false positive on 10.12 and 10.13,
-    // which allowed setting dark menu bar and dock area, which is
-    // is detected as dark mode. We must run on at least 10.14 where the
-    // proper dark mode was first introduced.
-    return wxPlatformInfo::Get().CheckOSVersion(10, 14) && mac_dark_mode();
-#else
-    return wxGetApp().app_config->get("dark_color_mode") == "1" ? true : check_dark_mode();
-    //const unsigned luma = get_colour_approx_luma(wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOW));
-    //return luma < 128;
-#endif
-#else
-    //BBS disable DarkUI mode
     return false;
-#endif
 }
 
 const wxColour GUI_App::get_label_default_clr_system()

@@ -8,6 +8,7 @@ namespace GUI {
 
 #if __APPLE__
 extern bool mac_dark_mode();
+void set_mac_light_appearance();
 extern double mac_max_scaling_factor();
 extern void set_miniaturizable(void * window);
 void WKWebView_evaluateJavaScript(void * web, wxString const & script, void (*callback)(wxString const &));
