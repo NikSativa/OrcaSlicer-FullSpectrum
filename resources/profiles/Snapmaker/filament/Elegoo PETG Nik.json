@@ -255,7 +255,7 @@
         "260"
     ],
     "nozzle_temperature": [
-        "250"
+        "240"
     ],
     "nozzle_temperature_initial_layer": [
         "250"
@@ -288,7 +288,7 @@
         "0"
     ],
     "slow_down_layer_time": [
-        "30"
+        "20"
     ],
     "slow_down_min_speed": [
         "10"

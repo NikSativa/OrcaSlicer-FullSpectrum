@@ -55,13 +55,13 @@
         "60"
     ],
     "fan_cooling_layer_time": [
-        "30"
+        "100"
     ],
     "fan_max_speed": [
-        "70"
+        "100"
     ],
     "fan_min_speed": [
-        "40"
+        "100"
     ],
     "filament_cooling_before_tower": [
         "0"
