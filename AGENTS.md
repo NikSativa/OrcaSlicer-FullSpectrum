@@ -21,3 +21,6 @@ The history favors concise, sentence-style subject lines with optional issue ref
 
 ## Security & Configuration Tips
 Follow `SECURITY.md` for vulnerability reporting. Keep API tokens and printer credentials out of tracked configs; use `sandboxes/` for experimental settings. When touching third-party code in `deps_src/`, record the upstream commit or release in your PR description and run the relevant platform build script to confirm integration.
+
+## Base-Studio Sync
+The base studio is Snapmaker Orca (`Snapmaker/OrcaSlicer`, the `snapmaker` remote), the official studio for the Snapmaker U1. When the user asks to sync with the base studio (RU: «синхронизировать с базовой студией»), follow `docs/Sync_With_Base_Studio_Playbook.md`: copy the pristine official base, carry over custom filament presets, restore in-house features on top, then port no-conflict features from other studios—run end-to-end on a dedicated branch and finish with the two lists (features lost; conflicts / needs clarification).

@@ -255,3 +255,16 @@ Run individual test suites:
 - **Performance benchmarks** help catch performance regressions
 - **Memory leak** detection important for long-running GUI application
 - **Cross-platform** testing required before releases
+
+## Base-Studio Sync
+
+The base studio is **Snapmaker Orca** (`Snapmaker/OrcaSlicer`, the `snapmaker` git remote) —
+the official studio for the Snapmaker U1.
+
+When the user asks to **sync with the base studio** (RU: «синхронизировать с базовой
+студией»), or to bring this fork up to the official Snapmaker Orca base, execute the
+playbook in [`docs/Sync_With_Base_Studio_Playbook.md`](docs/Sync_With_Base_Studio_Playbook.md):
+copy the pristine official base (100% U1-ready), carry over the user's custom filament
+presets, restore the fork's in-house features on top, then port no-conflict features from
+other studios. Run it end-to-end on a dedicated branch without mid-run questions, and end
+with the two deliverable lists (features lost, and conflicts / needs-clarification).
