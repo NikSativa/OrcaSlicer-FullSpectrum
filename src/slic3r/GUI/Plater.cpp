@@ -21571,7 +21571,7 @@ Plater::ColdPlateCompatResult Plater::get_cold_plate_compat_state(int plate_inde
     // Cool Steel Plate reuses the Supertack bed-type enumerator (its config key
     // is "Supertack Plate" in s_keys_map_BedType), so compare against btSuperTack directly.
     const BedType curr_bed = wxGetApp().preset_bundle->project_config.opt_enum<BedType>("curr_bed_type");
-    if (curr_bed != btSuperTack)
+    if (curr_bed != btSuperTack && curr_bed != btCryoGlacier && curr_bed != btCryoFrostbite)
         return result;
 
     // Need a non-null plate and at least one object on it
